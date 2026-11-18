@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Black Friday SMS Blast</title>
+<style>
+  /* Performance Golf: Performance Orange on warm neutrals; Repro text, GT Super headings, Repro Mono numbers */
+  :root {
+    --orange: #FD3300; --orange-dk: #DB2C00; --ink: #1D1A1A; --gray: #7B726C; --stone: #B3AAA3;
+    --pebble: #DFD9D5; --sand: #ECE9E4; --fog: #F4F2F0; --mist: #FCFAFA;
+    --bg: var(--fog); --card: var(--mist); --fg: var(--ink); --muted: var(--gray); --line: var(--pebble);
+    --s1: var(--orange); --s2: var(--ink); --grid: var(--sand);
+    --font: Repro, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --display: "GT Super Text", "GT Super", Georgia, serif;
+    --mono: "Repro Mono", ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root {
+    --bg: #1D1A1A; --card: #2A2626; --fg: #FCFAFA; --muted: #B3AAA3; --line: #3D3737; --s2: #DFD9D5; --grid: #332E2E; color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 var(--font); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 28px; }
+  .bar { height: 6px; background: var(--orange); }
+  header { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: flex-end; }
+  .eyebrow { font: 600 12px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--orange); margin: 0 0 8px; }
+  h1 { font: 400 clamp(30px, 4vw, 42px)/1.05 var(--display); margin: 0; text-wrap: balance; }
+  .sub { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .upd { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+  .upd li::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--orange); margin-right: 7px; vertical-align: 1px; }
+  .upd b { color: var(--fg); font-family: var(--mono); font-weight: 500; }
+  label.day { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+  select { font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; min-width: 170px; }
+  .lede { font-size: clamp(18px, 2vw, 21px); line-height: 1.45; max-width: 64ch; margin: 0; }
+  .lede b, .num { font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .lede b { color: var(--orange); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 18px; min-width: 0; }
+  .k { font: 600 11px/1.2 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+  .big { font: 400 34px/1.05 var(--display); font-variant-numeric: tabular-nums; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .tile-accent { border-top: 3px solid var(--orange); }
+  section { display: grid; gap: 10px; min-width: 0; }
+  h2 { font: 400 22px/1.2 var(--display); margin: 0; }
+  section > p { margin: 0; color: var(--muted); font-size: 13px; max-width: 70ch; }
+  .sold { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 18px; }
+  .sold .rev { grid-column: span 2; }
+  .sold .rev .big { color: var(--orange); }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+  .chart { position: relative; min-height: 220px; }
+  svg text { font-family: var(--font); font-size: 11px; fill: var(--muted); }
+  svg .val { fill: var(--fg); font-family: var(--mono); }
+  .tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font: 12px var(--mono); box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button { font: inherit; font-size: 12px; padding: 6px 14px; background: var(--card); color: var(--fg); border: 0; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--orange); color: #fff; }
+  .seg button:focus-visible, select:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
+  .tw { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font: 600 11px/1.2 var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); padding: 8px; }
+  td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.n, th.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
+  details { font-size: 13px; color: var(--muted); }
+  summary { cursor: pointer; color: var(--fg); }
+  dl { display: grid; grid-template-columns: minmax(120px, max-content) 1fr; gap: 6px 16px; margin: 10px 0 0; }
+  dt { color: var(--fg); } dd { margin: 0; }
+  .defs td:first-child { white-space: nowrap; font-weight: 600; }
+  #sources td { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">Performance Golf · Phone Team</p>
+      <h1>Black Friday SMS Blast</h1>
+      <ul class="upd" aria-label="When each source was last updated">
+        <li>SMS data updated as of <b id="u-sms">—</b></li>
+        <li>Calls updated as of <b id="u-calls">—</b></li>
+        <li>Sales data updated as of <b id="u-sales">—</b></li>
+      </ul>
+    </div>
+    <label class="day" for="day">Day<select id="day"></select></label>
+  </header>
+
+  <p class="lede"><b id="l-yes">—</b> people said YES out of <b id="l-del">—</b> texts delivered. Reps connected with <b id="l-conn">—</b> of them, and <b id="l-conv">—</b> bought, worth <b id="l-rev">—</b> upfront.</p>
+
+  <div class="tiles">
+    <div class="card tile-accent"><p class="k">Texts sent</p><div class="big" id="t-sent">—</div><div class="note"><span id="t-dr">—</span> delivered</div></div>
+    <div class="card"><p class="k">Replies</p><div class="big" id="t-rep">—</div><div class="note"><span id="t-rr">—</span> of delivered</div></div>
+    <div class="card"><p class="k">YES</p><div class="big" id="t-yes">—</div><div class="note"><span id="t-ys">—</span> of replies · <span id="t-yr">—</span> of delivered</div></div>
+    <div class="card"><p class="k">Connected</p><div class="big" id="t-conn">—</div><div class="note"><span id="t-cr">—</span> connect rate (of YES)</div></div>
+    <div class="card"><p class="k">Converted</p><div class="big" id="t-conv">—</div><div class="note"><span id="t-cy">—</span> of YES · <span id="t-cc">—</span> of connected</div></div>
+  </div>
+
+  <section>
+    <h2>What sold</h2>
+    <div class="card sold">
+      <div class="rev"><p class="k">Upfront revenue</p><div class="big" id="s-rev">—</div></div>
+      <div><p class="k">Clubs</p><div class="big" id="s-club">—</div></div>
+      <div><p class="k">PG1 (paid)</p><div class="big" id="s-pg1">—</div></div>
+      <div><p class="k">BFCM bundles</p><div class="big" id="s-bfcm">—</div></div>
+      <div><p class="k">Trials</p><div class="big" id="s-trial">—</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>By group</h2>
+    <p>Each list we uploaded, counted once per person.</p>
+    <div class="card tw"><table>
+      <thead><tr><th>Group</th><th class="n">Uploaded</th><th class="n">Texted</th><th class="n">Replied</th><th class="n">YES</th><th class="n">Connected</th><th class="n">Sales</th><th class="n">Upfront</th></tr></thead>
+      <tbody id="groups"></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>From text to sale</h2>
+    <p>Each bar is people, counted once. The share is of the step before.</p>
+    <div class="card"><div class="chart" id="funnel"></div></div>
+  </section>
+
+  <section>
+    <div class="row">
+      <h2>Trend since the blast started</h2>
+      <div class="seg" role="group" aria-label="Trend period">
+        <button type="button" data-g="day" aria-pressed="true">Daily</button><button type="button" data-g="week" aria-pressed="false">Weekly</button><button type="button" data-g="month" aria-pressed="false">Monthly</button>
+      </div>
+    </div>
+    <p>From Nov 18. Weeks start on Sunday.</p>
+    <div class="two">
+      <div class="card"><p class="k">Texts sent</p><div class="chart" id="tr-sent"></div></div>
+      <div class="card"><p class="k">YES replies (texts)</p><div class="chart" id="tr-yes"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="hours-h">By hour</h2>
+    <div class="two">
+      <div class="card"><p class="k">Texts sent by hour (ET)</p><div class="chart" id="h-sent"></div></div>
+      <div class="card"><p class="k">YES replies by hour (ET)</p><div class="chart" id="h-yes"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div style="display:grid;gap:10px;min-width:0">
+      <h2>Reps</h2>
+      <p style="margin:0;color:var(--muted);font-size:13px">Black Friday SMS sales by rep (Call Type "SMS blast" in the call tracker).</p>
+      <div class="card tw"><table><thead><tr><th>Rep</th><th class="n">Orders</th><th class="n">Upfront</th></tr></thead><tbody id="reps"></tbody></table></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How each number is counted</h2>
+    <div class="card tw"><table class="defs">
+      <thead><tr><th>Number</th><th>How it's counted</th></tr></thead>
+      <tbody>
+        <tr><td>Texts sent</td><td>Outbound texts on the Black Friday SMS Blast line.</td></tr>
+        <tr><td>Delivered</td><td>Texts sent minus failed ones (landlines, unreachable phones).</td></tr>
+        <tr><td>Replies</td><td>People who texted back on that line, counted once each.</td></tr>
+        <tr><td>YES</td><td>People whose reply carries Aloware's Black Friday YES tag. A support question can land here.</td></tr>
+        <tr><td>YES replies (charts)</td><td>Trend and by-hour charts count YES texts, so one person can count more than once.</td></tr>
+        <tr><td>Connected</td><td>People with at least one call of 90 seconds or more on the Black Friday line.</td></tr>
+        <tr><td>Converted</td><td>Orders in the call tracker with Call Type "SMS blast", one per rep and customer per day.</td></tr>
+        <tr><td>What sold</td><td>BFCM bundles counted on their own. Products with "Trial" in the name are trials, not paid PG1.</td></tr>
+        <tr><td>By group</td><td>Past buyers = the main blast list. Failed Close = the HubSpot Failed Close (Oct–Nov) list plus 15 past buyers from it.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <div class="card tw"><table>
+      <thead><tr><th>Data</th><th>Where it comes from</th><th>File</th><th>Updated as of</th></tr></thead>
+      <tbody id="sources"></tbody>
+    </table></div>
+    <p>No customer names, emails or phone numbers are shown. Page built <span id="built">—</span> ET.</p>
+  </section>
+</div>
+
+<script id="bf-data" type="application/json">{"updated":{"sms":"2026-11-18 13:29:34","calls":"2026-11-18 13:27:08","sales":"2026-11-18 14:51:30"},"days":["2026-11-18"],"all":{"sent":8693,"failed":387,"delivered":8306,"replied":471,"yes":351,"no":57,"dnc":73,"called":347,"connected":81,"converted":9,"revenue":3059.94,"clubs":8,"pg1":1,"bfcm":3,"trials":0,"delivered_rate":95.5,"reply_rate":5.7,"yes_rate":4.2,"yes_share":74.5,"connect_rate":23.1,"conv_yes":2.6,"conv_conn":11.1,"hours":[[9,3500,117],[10,690,44],[11,1801,67],[12,1801,84],[13,901,45]],"reps":[["Nezy Buenaventura",2,648.0],["Pauline Dimaculangan",1,638.0],["Emmanuella Frago",1,471.0],["Mark Donan",1,399.0],["Rubilyn Estrada",1,376.94],["Reynan Sularan",1,199.0],["Mark Ryan Francis",1,179.0],["Christian Buceron",1,149.0]],"groups":[["Past buyers (main blast)",10000,8689,471,351,80,9,3059.94],["Failed Close (Oct-Nov)",81,0,0,0,0,0,0]]},"byDay":{"2026-11-18":{"sent":8693,"failed":387,"delivered":8306,"replied":471,"yes":351,"no":57,"dnc":73,"called":347,"connected":81,"converted":9,"revenue":3059.94,"clubs":8,"pg1":1,"bfcm":3,"trials":0,"delivered_rate":95.5,"reply_rate":5.7,"yes_rate":4.2,"yes_share":74.5,"connect_rate":23.1,"conv_yes":2.6,"conv_conn":11.1,"hours":[[9,3500,117],[10,690,44],[11,1801,67],[12,1801,84],[13,901,45]],"reps":[["Nezy Buenaventura",2,648.0],["Pauline Dimaculangan",1,638.0],["Emmanuella Frago",1,471.0],["Mark Donan",1,399.0],["Rubilyn Estrada",1,376.94],["Reynan Sularan",1,199.0],["Mark Ryan Francis",1,179.0],["Christian Buceron",1,149.0]],"groups":[["Past buyers (main blast)",10000,8689,471,351,80,9,3059.94],["Failed Close (Oct-Nov)",81,0,0,0,0,0,0]]}},"daily":[["2026-11-18",8693,357]],"asof":"2026-11-18 13:29:34","built":"2026-11-18 14:51","sourceList":[["SMS (texts and replies)","Aloware export in Drive \u203a Phone Team Reports \u203a Black Friday SMS","Aloware - Blackfish 2 - Black Friday SMS logs - WB1116.csv","2026-11-18 13:29:34"],["Calls","Aloware export in Drive \u203a Phone Team Reports \u203a Aloware Call Logs - BF2","Aloware - Blackfish 2 - Call logs - WB1109.csv, Aloware - Blackfish 2 - Call logs - WB1116.csv","2026-11-18 13:27:08"],["Sales","Google Sheet \"Call Tracking - PG Phone Support\", tab Call Tracking (Call Type \"SMS blast\")","Call Tracking","2026-11-18 14:51:30"],["Groups","Upload lists we sent (Cohorts)","BF_cohort_1118.csv, BF_cohort_1118_FailedClose.csv",""]]}</script>
+<script>
+(function () {
+  const D = JSON.parse(document.getElementById('bf-data').textContent);
+  const $ = (id) => document.getElementById(id);
+  const int = (v) => (v == null ? '—' : Number(v).toLocaleString('en-US'));
+  const pct = (v) => (v == null ? '—' : Number(v).toFixed(1) + '%');
+  const money = (v) => (v == null ? '—' : '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dlabel = (d) => { const p = d.split('-'); return MON[+p[1] - 1] + ' ' + (+p[2]); };
+  const hl = (h) => (h === 0 ? '12a' : h < 12 ? h + 'a' : h === 12 ? '12p' : (h - 12) + 'p');
+  let grain = 'day';
+
+  const sel = $('day');
+  sel.appendChild(new Option('All days', ''));
+  D.days.slice().reverse().forEach((d) => sel.appendChild(new Option(dlabel(d) + ', ' + d.slice(0, 4), d)));
+  const latest = D.days[D.days.length - 1] || '';
+  sel.value = '';
+
+  function setText(id, v) { const el = $(id); if (el) el.textContent = v; }
+  function rows(tb, list, fmts, empty) {
+    tb.replaceChildren();
+    if (!list.length) { const tr = tb.insertRow(), td = tr.insertCell(); td.colSpan = fmts.length; td.className = 'empty'; td.textContent = empty; return; }
+    list.forEach((r) => { const tr = tb.insertRow(); fmts.forEach((f, i) => { const td = tr.insertCell(); td.textContent = f ? f(r[i]) : r[i]; if (f) td.className = 'n'; }); });
+  }
+
+  function bars(el, data, color, unit) {
+    el.replaceChildren();
+    if (!data.length) { const p = document.createElement('div'); p.className = 'empty'; p.textContent = 'Nothing for this period yet.'; el.appendChild(p); return; }
+    const W = Math.max(el.clientWidth, 260), H = 220, ns = 'http://www.w3.org/2000/svg';
+    const max = Math.max(...data.map((d) => d[1]), 1);
+    const step = Math.pow(10, Math.floor(Math.log10(max))); const top = Math.ceil(max / step) * step;
+    const L = String(int(top)).length * 7 + 12, T = 18, B = 24, R = 6;
+    const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', '100%');
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', data.map((d) => d[0] + ' ' + d[1]).join(', '));
+    const y = (v) => H - B - (v / top) * (H - B - T);
+    const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+    for (let i = 0; i <= 4; i++) { const v = (top / 4) * i; mk('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: css('--grid') }); mk('text', { x: L - 6, y: y(v) + 4, 'text-anchor': 'end' }).textContent = int(Math.round(v)); }
+    const bw = (W - L - R) / data.length, pad = Math.min(bw * 0.25, 18);
+    const every = Math.ceil(data.length / Math.max(Math.floor((W - L) / 48), 1));
+    const tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true;
+    data.forEach((d, i) => {
+      const x = L + i * bw + pad / 2, w = Math.max(bw - pad, 2);
+      const r = mk('rect', { x, y: y(d[1]), width: w, height: Math.max(y(0) - y(d[1]), d[1] ? 1 : 0), rx: 2, fill: color });
+      r.addEventListener('pointermove', (ev) => { const b = el.getBoundingClientRect(); tip.textContent = `${d[0]}: ${int(d[1])} ${unit}`; tip.hidden = false; tip.style.left = Math.min(ev.clientX - b.left + 10, b.width - tip.offsetWidth - 4) + 'px'; tip.style.top = Math.max(ev.clientY - b.top - 30, 0) + 'px'; });
+      r.addEventListener('pointerleave', () => { tip.hidden = true; });
+      if (w > 26) mk('text', { x: x + w / 2, y: y(d[1]) - 4, 'text-anchor': 'middle', class: 'val' }).textContent = int(d[1]);
+      if (i % every === 0) mk('text', { x: x + w / 2, y: H - 6, 'text-anchor': 'middle' }).textContent = d[0];
+    });
+    el.appendChild(svg); el.appendChild(tip);
+  }
+
+  function funnel(el, m) {
+    el.replaceChildren();
+    const steps = [['Delivered', m.delivered], ['Replied', m.replied], ['Said YES', m.yes], ['Called', m.called], ['Connected 90 s+', m.connected], ['Bought', m.converted]];
+    const W = Math.max(el.clientWidth, 280), rowH = 38, H = steps.length * rowH, ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', '100%');
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Funnel: ' + steps.map((s) => s[0] + ' ' + s[1]).join(', '));
+    const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+    const lab = 120, valw = 120, max = Math.max(steps[0][1], 1), span = Math.max(W - lab - valw, 40);
+    steps.forEach((s, i) => {
+      const yv = i * rowH, w = Math.max((s[1] / max) * span, s[1] ? 2 : 0);
+      mk('text', { x: 0, y: yv + rowH / 2 + 4, class: 'val' }).textContent = s[0];
+      mk('rect', { x: lab, y: yv + 7, width: w, height: rowH - 14, rx: 3, fill: i === steps.length - 1 ? css('--s2') : css('--s1') });
+      const t = mk('text', { x: lab + w + 8, y: yv + rowH / 2 + 4, class: 'val' }); t.textContent = int(s[1]);
+      if (i) { const p = mk('text', { x: lab + w + 8 + String(int(s[1])).length * 8 + 8, y: yv + rowH / 2 + 4 }); p.textContent = (steps[i - 1][1] ? (s[1] / steps[i - 1][1] * 100).toFixed(1) : '0.0') + '%'; }
+    });
+    el.appendChild(svg);
+  }
+
+  function weekStart(d) { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - t.getUTCDay()); return t.toISOString().slice(0, 10); }
+  function trend() {
+    const last = sel.value || latest;
+    const m = new Map();
+    D.daily.filter((r) => r[0] <= last).forEach(([d, s, y]) => {
+      const k = grain === 'day' ? d : grain === 'week' ? weekStart(d) : d.slice(0, 7);
+      const a = m.get(k) || [0, 0]; a[0] += s; a[1] += y; m.set(k, a);
+    });
+    const lab = (k) => (grain === 'month' ? MON[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4) : (grain === 'week' ? 'Wk of ' : '') + dlabel(k));
+    const list = [...m.entries()].sort();
+    bars($('tr-sent'), list.map(([k, v]) => [lab(k), v[0]]), css('--s1'), 'texts');
+    bars($('tr-yes'), list.map(([k, v]) => [lab(k), v[1]]), css('--s2'), 'YES replies');
+  }
+
+  function render() {
+    const day = sel.value, m = day ? D.byDay[day] : D.all;
+    setText('l-yes', int(m.yes)); setText('l-del', int(m.delivered)); setText('l-conn', int(m.connected)); setText('l-conv', int(m.converted)); setText('l-rev', money(m.revenue));
+    setText('t-sent', int(m.sent)); setText('t-dr', pct(m.delivered_rate)); setText('t-rep', int(m.replied)); setText('t-rr', pct(m.reply_rate));
+    setText('t-yes', int(m.yes)); setText('t-ys', pct(m.yes_share)); setText('t-yr', pct(m.yes_rate));
+    setText('t-conn', int(m.connected)); setText('t-cr', pct(m.connect_rate)); setText('t-conv', int(m.converted)); setText('t-cy', pct(m.conv_yes)); setText('t-cc', pct(m.conv_conn));
+    setText('s-rev', money(m.revenue)); setText('s-club', int(m.clubs)); setText('s-pg1', int(m.pg1)); setText('s-bfcm', int(m.bfcm)); setText('s-trial', int(m.trials));
+    rows($('groups'), m.groups, [null, int, int, int, int, int, int, money], 'No groups yet.');
+    rows($('reps'), m.reps, [null, int, money], 'No sales yet.');
+    funnel($('funnel'), m);
+    const hd = day || latest, hm = D.byDay[hd] || { hours: [] };
+    setText('hours-h', 'By hour · ' + (hd ? dlabel(hd) : ''));
+    bars($('h-sent'), hm.hours.map((h) => [hl(h[0]), h[1]]), css('--s1'), 'texts');
+    bars($('h-yes'), hm.hours.map((h) => [hl(h[0]), h[2]]), css('--s2'), 'YES replies');
+    trend();
+  }
+
+  document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
+    grain = b.dataset.g; document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); trend();
+  }));
+  sel.addEventListener('change', render);
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+  const when = (t) => { if (!t) return '—'; const d = new Date(t.replace(' ', 'T')); return dlabel(t.slice(0, 10)) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' ET'; };
+  setText('u-sms', when(D.updated.sms)); setText('u-calls', when(D.updated.calls)); setText('u-sales', when(D.updated.sales));
+  setText('built', when(D.built));
+  const src = $('sources'); src.replaceChildren();
+  D.sourceList.forEach((r) => { const tr = src.insertRow(); [r[0], r[1], r[2], r[3] ? when(r[3]) : '—'].forEach((v) => { tr.insertCell().textContent = v; }); });
+  render();
+})();
+</script>
+</body>
+</html>

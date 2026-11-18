@@ -1,0 +1,60 @@
+name: Black Friday SMS dashboard (cloud)
+
+# Every 15 minutes (public repo = free minutes), plus a manual Run button and an optional Drive-trigger ping.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [bf-drive-changed]
+
+concurrency:
+  group: bf-dashboard
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # commit the rebuilt index.html; Vercel redeploys on push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BF_SOURCE: api
+      BF_SA_KEY: ${{ github.workspace }}/secrets/sa.json
+      BF_WORK: ${{ github.workspace }}/.work
+      BF_HASH_KEY: ${{ secrets.BF_HASH_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+      - run: python3 -m pip install -q -r pipeline/requirements.txt
+      - name: Service-account key from secret
+        run: mkdir -p secrets && printf '%s' "$GCP_SA_KEY" > secrets/sa.json
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+      - name: Reuse downloaded exports
+        uses: actions/cache@v4
+        with:
+          path: .work/drive
+          key: bf-drive-${{ github.run_id }}
+          restore-keys: bf-drive-
+      - name: Copy SMS blast sales from the call tracker
+        run: cd pipeline && python3 -W ignore bf_sales_pull.py
+      - name: Build the page
+        id: build
+        run: |
+          cd pipeline
+          python3 -W ignore bf_site_build.py | tee ../.work/build.log
+          grep -q '^PUBLISH=yes' ../.work/build.log && echo "publish=yes" >> "$GITHUB_OUTPUT" || echo "publish=no" >> "$GITHUB_OUTPUT"
+      - name: Commit + push (Vercel redeploys on push)
+        if: steps.build.outputs.publish == 'yes'
+        run: |
+          git config user.name  "lhennehl01-git"
+          git config user.email "290474401+lhennehl01-git@users.noreply.github.com"
+          git add index.html
+          git commit -m "cloud: rebuild Black Friday dashboard" || { echo "nothing changed"; exit 0; }
+          git push

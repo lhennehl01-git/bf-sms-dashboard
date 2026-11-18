@@ -1,0 +1,6 @@
+.work/
+._*
+.DS_Store
+__pycache__/
+secrets/
+.vercel/
