@@ -30,6 +30,16 @@
   .upd { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
   .upd li::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--orange); margin-right: 7px; vertical-align: 1px; }
   .upd b { color: var(--fg); font-family: var(--mono); font-weight: 500; }
+  .range { display: grid; gap: 6px; justify-items: start; }
+  .custom { display: flex; gap: 8px; flex-wrap: wrap; }
+  .custom[hidden] { display: none; }
+  input[type=date] { font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+  .rlabel { margin: 0; font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  details.mini { font-size: 12px; color: var(--muted); }
+  details.mini summary { cursor: pointer; color: var(--muted); font-size: 12px; padding: 4px 0; }
+  details.mini summary:hover { color: var(--fg); }
+  details.mini table { font-size: 12px; margin-top: 6px; }
+  details.mini td, details.mini th { padding: 5px 8px; }
   label.day { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
   select { font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; min-width: 170px; }
   .lede { font-size: clamp(18px, 2vw, 21px); line-height: 1.45; max-width: 64ch; margin: 0; }
@@ -85,7 +95,27 @@
         <li>Sales data updated as of <b id="u-sales">—</b></li>
       </ul>
     </div>
-    <label class="day" for="day">Day<select id="day"></select></label>
+    <div class="range">
+      <label class="day" for="range">Date range
+        <select id="range">
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="this_week">This week</option>
+          <option value="last_7">Last 7 days</option>
+          <option value="last_14">Last 14 days</option>
+          <option value="last_30">Last 30 days</option>
+          <option value="this_month">This month</option>
+          <option value="last_month">Last month</option>
+          <option value="all">Since launch (Nov 18)</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </label>
+      <div class="custom" id="custom" hidden>
+        <label class="day" for="from">From<input type="date" id="from" min="2026-11-18"></label>
+        <label class="day" for="to">To<input type="date" id="to" min="2026-11-18"></label>
+      </div>
+      <p class="rlabel" id="rlabel">—</p>
+    </div>
   </header>
 
   <p class="lede"><b id="l-yes">—</b> people said YES out of <b id="l-del">—</b> texts delivered. Reps connected with <b id="l-conn">—</b> of them, and <b id="l-conv">—</b> bought, worth <b id="l-rev">—</b> upfront.</p>
@@ -131,7 +161,7 @@
         <button type="button" data-g="day" aria-pressed="true">Daily</button><button type="button" data-g="week" aria-pressed="false">Weekly</button><button type="button" data-g="month" aria-pressed="false">Monthly</button>
       </div>
     </div>
-    <p>From Nov 18. Weeks start on Sunday.</p>
+    <p>Whole campaign since Nov 18 (not affected by the date range). Weeks start on Sunday.</p>
     <div class="two">
       <div class="card"><p class="k">Texts sent</p><div class="chart" id="tr-sent"></div></div>
       <div class="card"><p class="k">YES replies (texts)</p><div class="chart" id="tr-yes"></div></div>
@@ -154,32 +184,32 @@
     </div>
   </section>
 
-  <section>
-    <h2>How each number is counted</h2>
-    <div class="card tw"><table class="defs">
-      <thead><tr><th>Number</th><th>How it's counted</th></tr></thead>
+  <details class="mini">
+    <summary>How each number is counted</summary>
+    <div class="tw"><table class="defs">
       <tbody>
         <tr><td>Texts sent</td><td>Outbound texts on the Black Friday SMS Blast line.</td></tr>
         <tr><td>Delivered</td><td>Texts sent minus failed ones (landlines, unreachable phones).</td></tr>
-        <tr><td>Replies</td><td>People who texted back on that line, counted once each.</td></tr>
+        <tr><td>Replies</td><td>People who texted back on that line, counted once each in the date range.</td></tr>
         <tr><td>YES</td><td>People whose reply carries Aloware's Black Friday YES tag. A support question can land here.</td></tr>
         <tr><td>YES replies (charts)</td><td>Trend and by-hour charts count YES texts, so one person can count more than once.</td></tr>
         <tr><td>Connected</td><td>People with at least one call of 90 seconds or more on the Black Friday line.</td></tr>
         <tr><td>Converted</td><td>Orders in the call tracker with Call Type "SMS blast", one per rep and customer per day.</td></tr>
         <tr><td>What sold</td><td>BFCM bundles counted on their own. Products with "Trial" in the name are trials, not paid PG1.</td></tr>
         <tr><td>By group</td><td>Past buyers = the main blast list. Failed Close = the HubSpot Failed Close (Oct–Nov) list plus 15 past buyers from it.</td></tr>
+        <tr><td>Dates</td><td>Eastern time. Weeks start on Sunday.</td></tr>
       </tbody>
     </table></div>
-  </section>
+  </details>
 
-  <section>
-    <h2>Sources</h2>
-    <div class="card tw"><table>
+  <details class="mini">
+    <summary>Sources</summary>
+    <div class="tw"><table>
       <thead><tr><th>Data</th><th>Where it comes from</th><th>File</th><th>Updated as of</th></tr></thead>
       <tbody id="sources"></tbody>
     </table></div>
     <p>No customer names, emails or phone numbers are shown. Page built <span id="built">—</span> ET.</p>
-  </section>
+  </details>
 </div>
 
 <script id="bf-data" type="application/json">/*BF_DATA*/null</script>
@@ -195,12 +225,54 @@
   const dlabel = (d) => { const p = d.split('-'); return MON[+p[1] - 1] + ' ' + (+p[2]); };
   const hl = (h) => (h === 0 ? '12a' : h < 12 ? h + 'a' : h === 12 ? '12p' : (h - 12) + 'p');
   let grain = 'day';
-
-  const sel = $('day');
-  sel.appendChild(new Option('All days', ''));
-  D.days.slice().reverse().forEach((d) => sel.appendChild(new Option(dlabel(d) + ', ' + d.slice(0, 4), d)));
-  const latest = D.days[D.days.length - 1] || '';
-  sel.value = '';
+  const DAYS = Object.keys(D.days).sort();
+  const iso = (dt) => dt.toISOString().slice(0, 10);
+  const addDays = (d, n) => { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return iso(t); };
+  const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const FIRST = '2026-11-18';
+  const sel = $('range'), fromEl = $('from'), toEl = $('to');
+  fromEl.max = TODAY; toEl.max = TODAY;
+  function range() {
+    const v = sel.value, t = TODAY, dow = new Date(t + 'T00:00:00Z').getUTCDay();
+    const mStart = t.slice(0, 8) + '01';
+    const lmEnd = addDays(mStart, -1), lmStart = lmEnd.slice(0, 8) + '01';
+    switch (v) {
+      case 'yesterday': return [addDays(t, -1), addDays(t, -1)];
+      case 'this_week': return [addDays(t, -dow), t];
+      case 'last_7': return [addDays(t, -6), t];
+      case 'last_14': return [addDays(t, -13), t];
+      case 'last_30': return [addDays(t, -29), t];
+      case 'this_month': return [mStart, t];
+      case 'last_month': return [lmStart, lmEnd];
+      case 'all': return [FIRST, t];
+      case 'custom': { const f = fromEl.value || FIRST, e = toEl.value || t; return f <= e ? [f, e] : [e, f]; }
+      default: return [t, t];
+    }
+  }
+  function compute(f, e) {
+    const ds = DAYS.filter((d) => d >= f && d <= e);
+    const U = (k) => { const s = new Set(); ds.forEach((d) => D.days[d][k].forEach((i) => s.add(i))); return s; };
+    const sent = ds.reduce((a, d) => a + D.days[d].sent, 0), failed = ds.reduce((a, d) => a + D.days[d].failed, 0);
+    const texted = U('texted'), rep = U('replied'), yes = U('yes'), called = U('called'), conn = U('conn');
+    const O = D.orders.filter((o) => o[0] >= f && o[0] <= e);
+    const k = { club: 0, pg1: 0, bfcm: 0, trial: 0 };
+    O.forEach((o) => o[2].forEach((it) => { if (it[1] in k) k[it[1]]++; }));
+    const rate = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : 0), dl = Math.max(sent - failed, 0), rev = O.reduce((a, o) => a + o[3], 0);
+    const m = { sent, failed, delivered: dl, replied: rep.size, yes: yes.size, called: called.size, connected: conn.size,
+      converted: O.length, revenue: rev, clubs: k.club, pg1: k.pg1, bfcm: k.bfcm, trials: k.trial };
+    Object.assign(m, { delivered_rate: rate(dl, sent), reply_rate: rate(m.replied, dl), yes_rate: rate(m.yes, dl), yes_share: rate(m.yes, m.replied),
+      connect_rate: rate(m.connected, m.yes), conv_yes: rate(m.converted, m.yes), conv_conn: rate(m.converted, m.connected) });
+    const hrs = new Map();
+    ds.forEach((d) => D.days[d].hours.forEach(([h, a, b]) => { const x = hrs.get(h) || [0, 0]; x[0] += a; x[1] += b; hrs.set(h, x); }));
+    m.hours = [...hrs.entries()].sort((a, b) => a[0] - b[0]).map(([h, v]) => [h, v[0], v[1]]);
+    const reps = new Map();
+    O.forEach((o) => { const x = reps.get(o[1]) || [0, 0]; x[0]++; x[1] += o[3]; reps.set(o[1], x); });
+    m.reps = [...reps.entries()].map(([r, v]) => [r, v[0], Math.round(v[1] * 100) / 100]).sort((a, b) => b[2] - a[2] || b[1] - a[1]);
+    const inG = (set, g) => { let n = 0; set.forEach((i) => { if (D.pg[i] === g) n++; }); return n; };
+    m.groups = D.groups.map((g, gi) => { const go = O.filter((o) => o[4] === gi);
+      return [g, D.gsize[gi], inG(texted, gi), inG(rep, gi), inG(yes, gi), inG(conn, gi), go.length, go.reduce((a, o) => a + o[3], 0)]; });
+    return m;
+  }
 
   function setText(id, v) { const el = $(id); if (el) el.textContent = v; }
   function rows(tb, list, fmts, empty) {
@@ -255,11 +327,10 @@
 
   function weekStart(d) { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - t.getUTCDay()); return t.toISOString().slice(0, 10); }
   function trend() {
-    const last = sel.value || latest;
     const m = new Map();
-    D.daily.filter((r) => r[0] <= last).forEach(([d, s, y]) => {
+    DAYS.forEach((d) => {
       const k = grain === 'day' ? d : grain === 'week' ? weekStart(d) : d.slice(0, 7);
-      const a = m.get(k) || [0, 0]; a[0] += s; a[1] += y; m.set(k, a);
+      const a = m.get(k) || [0, 0]; a[0] += D.days[d].sent; a[1] += D.days[d].yesTexts; m.set(k, a);
     });
     const lab = (k) => (grain === 'month' ? MON[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4) : (grain === 'week' ? 'Wk of ' : '') + dlabel(k));
     const list = [...m.entries()].sort();
@@ -268,26 +339,33 @@
   }
 
   function render() {
-    const day = sel.value, m = day ? D.byDay[day] : D.all;
+    $('custom').hidden = sel.value !== 'custom';
+    const [f, e] = range(), m = compute(f, e);
+    const rl = f === e ? dlabel(f) + ', ' + f.slice(0, 4) : dlabel(f) + ' – ' + dlabel(e) + ', ' + e.slice(0, 4);
+    setText('rlabel', rl);
+    if (sel.value === 'custom' && document.activeElement !== fromEl && document.activeElement !== toEl) { fromEl.value = f; toEl.value = e; }
     setText('l-yes', int(m.yes)); setText('l-del', int(m.delivered)); setText('l-conn', int(m.connected)); setText('l-conv', int(m.converted)); setText('l-rev', money(m.revenue));
     setText('t-sent', int(m.sent)); setText('t-dr', pct(m.delivered_rate)); setText('t-rep', int(m.replied)); setText('t-rr', pct(m.reply_rate));
     setText('t-yes', int(m.yes)); setText('t-ys', pct(m.yes_share)); setText('t-yr', pct(m.yes_rate));
     setText('t-conn', int(m.connected)); setText('t-cr', pct(m.connect_rate)); setText('t-conv', int(m.converted)); setText('t-cy', pct(m.conv_yes)); setText('t-cc', pct(m.conv_conn));
     setText('s-rev', money(m.revenue)); setText('s-club', int(m.clubs)); setText('s-pg1', int(m.pg1)); setText('s-bfcm', int(m.bfcm)); setText('s-trial', int(m.trials));
     rows($('groups'), m.groups, [null, int, int, int, int, int, int, money], 'No groups yet.');
-    rows($('reps'), m.reps, [null, int, money], 'No sales yet.');
+    rows($('reps'), m.reps, [null, int, money], 'No sales in this date range.');
     funnel($('funnel'), m);
-    const hd = day || latest, hm = D.byDay[hd] || { hours: [] };
-    setText('hours-h', 'By hour · ' + (hd ? dlabel(hd) : ''));
-    bars($('h-sent'), hm.hours.map((h) => [hl(h[0]), h[1]]), css('--s1'), 'texts');
-    bars($('h-yes'), hm.hours.map((h) => [hl(h[0]), h[2]]), css('--s2'), 'YES replies');
+    setText('hours-h', 'By hour · ' + rl);
+    bars($('h-sent'), m.hours.map((h) => [hl(h[0]), h[1]]), css('--s1'), 'texts');
+    bars($('h-yes'), m.hours.map((h) => [hl(h[0]), h[2]]), css('--s2'), 'YES replies');
     trend();
   }
 
   document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
     grain = b.dataset.g; document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); trend();
   }));
-  sel.addEventListener('change', render);
+  sel.addEventListener('change', () => {
+    if (sel.value === 'custom' && !fromEl.value) { const [f, e] = [FIRST, TODAY]; fromEl.value = f; toEl.value = e; }
+    render();
+  });
+  [fromEl, toEl].forEach((el) => el.addEventListener('change', () => { if (el.validity.valid) render(); }));
   let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
   const when = (t) => { if (!t) return '—'; const d = new Date(t.replace(' ', 'T')); return dlabel(t.slice(0, 10)) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' ET'; };

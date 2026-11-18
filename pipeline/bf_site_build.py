@@ -81,51 +81,46 @@ def group_of_phone(p):
 group_of_email = lambda k: (G['groups'][G['emails'][k]] if k in G['emails'] else None)
 
 
-def metrics(day):
-    inday = (lambda t: t[:10] == day) if day else (lambda t: True)
-    S = [r for r in sms if inday(r['Started At'])]
-    C = [r for r in calls if inday(r['Started At'])]
-    O = [o for o in orders if (not day or o['date'] == day)]
-    out = [r for r in S if r['Direction'] == 'outbound']
-    inb = [r for r in S if r['Direction'] == 'inbound']
-    failed = [r for r in out if r['Disposition Status'] in ('failed', 'invalid')]
-    people = lambda rows: {p10(r['Contact Number']) for r in rows if p10(r['Contact Number'])}
-    tag = lambda t: [r for r in inb if t in (r.get('Tags') or '')]
-    rep_p, yes_p, no_p, dnc_p = people(inb), people(tag(YES)), people(tag(NO)), people(tag(DNC))
-    called_p = people([r for r in C if r['Direction'] == 'outbound'])
-    conn_p = people([r for r in C if sec(r['Talk Time']) >= 90])
-    sent, f = len(out), len(failed); dl = max(sent - f, 0)
-    kinds = collections.Counter(kind(i) for o in O for i in o['items'])
-    rate = lambda a, b: round(a / b * 100, 1) if b else 0
-    m = dict(sent=sent, failed=f, delivered=dl, replied=len(rep_p), yes=len(yes_p), no=len(no_p), dnc=len(dnc_p),
-             called=len(called_p), connected=len(conn_p), converted=len(O), revenue=round(sum(o['upfront'] for o in O), 2),
-             clubs=kinds['club'], pg1=kinds['pg1'], bfcm=kinds['bfcm'], trials=kinds['trial'])
-    m.update(delivered_rate=rate(dl, sent), reply_rate=rate(m['replied'], dl), yes_rate=rate(m['yes'], dl),
-             yes_share=rate(m['yes'], m['replied']), connect_rate=rate(m['connected'], m['yes']),
-             conv_yes=rate(m['converted'], m['yes']), conv_conn=rate(m['converted'], m['connected']))
-    hours = collections.defaultdict(lambda: [0, 0])
-    for r in out: hours[int(r['Started At'][11:13])][0] += 1
-    for r in tag(YES): hours[int(r['Started At'][11:13])][1] += 1
-    m['hours'] = [[h, v[0], v[1]] for h, v in sorted(hours.items())]
-    reps = collections.defaultdict(lambda: [0, 0.0])
-    for o in O: reps[o['rep']][0] += 1; reps[o['rep']][1] += o['upfront']
-    m['reps'] = sorted([[k, v[0], round(v[1], 2)] for k, v in reps.items()], key=lambda x: (-x[2], -x[1]))
-    m['groups'] = []
-    for g in G['groups']:
-        gp = lambda ps: sum(1 for p in ps if group_of_phone(p) == g)
-        go = [o for o in O if group_of_email(o['customer']) == g]
-        m['groups'].append([g, G['size'].get(g, 0), gp(people(out)), gp(rep_p), gp(yes_p), gp(conn_p), len(go),
-                            round(sum(o['upfront'] for o in go), 2)])
-    return m
-
-
-days = sorted({r['Started At'][:10] for r in sms} | {o['date'] for o in orders})
-daily = [[d, sum(1 for r in sms if r['Started At'][:10] == d and r['Direction'] == 'outbound'),
-          sum(1 for r in sms if r['Started At'][:10] == d and r['Direction'] == 'inbound' and YES in (r.get('Tags') or ''))] for d in days]
+# ---- per-day building blocks; the page adds them up for any date range (people are counted once per range)
+idx = {}
+def pid(p):
+    if p not in idx: idx[p] = len(idx)
+    return idx[p]
+blank = lambda: {'sent': 0, 'failed': 0, 'yesTexts': 0, 'hours': collections.defaultdict(lambda: [0, 0]),
+                 'texted': set(), 'replied': set(), 'yes': set(), 'no': set(), 'dnc': set(), 'called': set(), 'conn': set()}
+per = collections.defaultdict(blank)
+for r in sms:
+    d, h, p = r['Started At'][:10], int(r['Started At'][11:13] or 0), p10(r['Contact Number'])
+    x = per[d]
+    if r['Direction'] == 'outbound':
+        x['sent'] += 1; x['hours'][h][0] += 1
+        if r['Disposition Status'] in ('failed', 'invalid'): x['failed'] += 1
+        if p: x['texted'].add(pid(p))
+    elif r['Direction'] == 'inbound' and p:
+        i, t = pid(p), r.get('Tags') or ''
+        x['replied'].add(i)
+        if YES in t: x['yes'].add(i); x['yesTexts'] += 1; x['hours'][h][1] += 1
+        if NO in t: x['no'].add(i)
+        if DNC in t: x['dnc'].add(i)
+for r in calls:
+    d, p = r['Started At'][:10], p10(r['Contact Number'])
+    if not p: continue
+    if r['Direction'] == 'outbound': per[d]['called'].add(pid(p))
+    if sec(r['Talk Time']) >= 90: per[d]['conn'].add(pid(p))
+for o in orders: per[o['date']]
+gi = {g: i for i, g in enumerate(G['groups'])}
+pg = [-1] * len(idx)
+for p, i in idx.items():
+    g = group_of_phone(p); pg[i] = gi[g] if g in gi else -1
+days = {d: {'sent': x['sent'], 'failed': x['failed'], 'yesTexts': x['yesTexts'],
+            'hours': [[h, v[0], v[1]] for h, v in sorted(x['hours'].items())],
+            **{k: sorted(x[k]) for k in ('texted', 'replied', 'yes', 'no', 'dnc', 'called', 'conn')}} for d, x in sorted(per.items())}
+order_rows = [[o['date'], o['rep'], [[it, kind(it)] for it in o['items']], round(o['upfront'], 2),
+               gi.get(group_of_email(o['customer']), -1)] for o in orders]
 asof = max([r['Started At'] for r in sms] + [''])
 sales_asof = json.load(open(SALES_META))['pulled_at'] if os.path.exists(SALES_META) else ''
-core = {'updated': {'sms': asof, 'calls': call_asof}, 'days': days, 'all': metrics(None),
-        'byDay': {d: metrics(d) for d in days}, 'daily': daily}
+core = {'updated': {'sms': asof, 'calls': call_asof}, 'days': days, 'orders': order_rows, 'pg': pg,
+        'groups': G['groups'], 'gsize': [G['size'].get(g, 0) for g in G['groups']]}
 data = dict(core, asof=asof, built=now_et().strftime('%Y-%m-%d %H:%M'))
 data['updated'] = dict(core['updated'], sales=sales_asof)
 data['sourceList'] = [
@@ -155,8 +150,8 @@ publish = changed or age_min >= 60
 if publish:
     tpl = open(os.path.join(PIPE, 'bf_site_template.html'), encoding='utf-8').read()
     open(out, 'w', encoding='utf-8').write(tpl.replace('/*BF_DATA*/null', json.dumps(data, separators=(',', ':')).replace('</', '<\\/')))
-a = data['all']
+u = lambda k: len(set().union(*[set(x[k]) for x in days.values()])) if days else 0
 print('as of', asof, '| calls as of', call_asof, '| sales as of', sales_asof, '| texts', len(sms), 'calls', len(calls), 'orders', len(orders))
-print({k: a[k] for k in ['sent', 'delivered', 'replied', 'yes', 'called', 'connected', 'converted', 'revenue']})
-print('groups', a['groups'])
+print({'sent': sum(x['sent'] for x in days.values()), 'replied': u('replied'), 'yes': u('yes'), 'called': u('called'),
+       'connected': u('conn'), 'converted': len(orders), 'revenue': round(sum(o['upfront'] for o in orders), 2)})
 print('PUBLISH=' + ('yes' if publish else 'no'), '(numbers changed)' if changed else '(page age %d min)' % age_min)
