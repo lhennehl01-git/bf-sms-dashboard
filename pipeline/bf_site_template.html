@@ -157,7 +157,7 @@
 
   <nav class="tabs" role="tablist" aria-label="Views">
     <button type="button" role="tab" id="tab-exec" data-view="exec" aria-selected="true">Executive</button>
-    <button type="button" role="tab" id="tab-ops" data-view="ops" aria-selected="false">Calls &amp; Operations</button>
+    <button type="button" role="tab" id="tab-ops" data-view="ops" aria-selected="false">Call Performance</button>
   </nav>
 
   <div id="view-exec" class="view">
@@ -458,7 +458,7 @@
     bars($('tr-yes'), list.map(([k, v]) => [lab(k), v[1]]), css('--s2'), 'YES replies');
   }
 
-  // ---------- Calls & Operations (response time, status and gauge follow the TMA report rules)
+  // ---------- Call Performance (response time, status and gauge follow the TMA report rules)
   const HOOP = [8, 17], SLA = 30, RT_TARGET = 5;
   const dayOf = (t) => addDays(D.start, Math.floor(t / 1440));
   const inHoop = (t) => { const h = Math.floor((t % 1440) / 60); return h >= HOOP[0] && h < HOOP[1]; };
