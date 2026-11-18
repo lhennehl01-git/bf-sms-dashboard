@@ -27,12 +27,29 @@
   .eyebrow { font: 600 12px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--orange); margin: 0 0 8px; }
   h1 { font: 400 clamp(30px, 4vw, 42px)/1.05 var(--display); margin: 0; text-wrap: balance; }
   .sub { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
-  .upd { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
-  .upd li::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--orange); margin-right: 7px; vertical-align: 1px; }
-  .upd b { color: var(--fg); font-family: var(--mono); font-weight: 500; }
-  .range { display: grid; gap: 6px; justify-items: start; }
-  .custom { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hdr { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px 24px; align-items: end; }
+  .hdr-r { display: grid; gap: 6px; width: 100%; }
+  .hdr-r select { width: 100%; min-width: 0; }
+  .hdr-r .k { margin: 0; }
+  .custom { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
   .custom[hidden] { display: none; }
+  .custom input { width: 100%; min-width: 0; }
+  .upd { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 12px 0 0; font-size: 12px; }
+  .upd div { display: flex; gap: 6px; align-items: baseline; }
+  .upd dt { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: 10px; font-weight: 600; }
+  .upd dt::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); margin-right: 6px; vertical-align: 1px; }
+  .upd dd { margin: 0; color: var(--fg); font-family: var(--mono); white-space: nowrap; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+  .tabs button { font: inherit; font-size: 14px; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); padding: 10px 14px; cursor: pointer; margin-bottom: -1px; }
+  .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--orange); font-weight: 600; }
+  .tabs button:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .view { display: grid; gap: 28px; }
+  .view[hidden] { display: none; }
+  tr.pick { cursor: pointer; }
+  tr.pick:hover td { background: var(--sand); }
+  tr.pick.on td { background: var(--sand); font-weight: 600; }
+  @media (prefers-color-scheme: dark) { tr.pick:hover td, tr.pick.on td { background: var(--grid); } }
+  @media (max-width: 640px) { .hdr { grid-template-columns: 1fr; } }
   input[type=date] { font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
   .rlabel { margin: 0; font-size: 12px; color: var(--muted); font-family: var(--mono); }
   details.mini { font-size: 12px; color: var(--muted); }
@@ -85,38 +102,43 @@
 <body>
 <div class="bar"></div>
 <div class="wrap">
-  <header>
-    <div>
+  <header class="hdr">
+    <div class="hdr-l">
       <p class="eyebrow">Performance Golf · Phone Team</p>
       <h1>Black Friday SMS Blast</h1>
-      <ul class="upd" aria-label="When each source was last updated">
-        <li>SMS data updated as of <b id="u-sms">—</b></li>
-        <li>Calls updated as of <b id="u-calls">—</b></li>
-        <li>Sales data updated as of <b id="u-sales">—</b></li>
-      </ul>
+      <dl class="upd" aria-label="Last updated">
+        <div><dt>SMS</dt><dd id="u-sms">—</dd></div>
+        <div><dt>Calls</dt><dd id="u-calls">—</dd></div>
+        <div><dt>Sales</dt><dd id="u-sales">—</dd></div>
+      </dl>
     </div>
-    <div class="range">
-      <label class="day" for="range">Date range
-        <select id="range">
-          <option value="today">Today</option>
-          <option value="yesterday">Yesterday</option>
-          <option value="this_week">This week</option>
-          <option value="last_7">Last 7 days</option>
-          <option value="last_14">Last 14 days</option>
-          <option value="last_30">Last 30 days</option>
-          <option value="this_month">This month</option>
-          <option value="last_month">Last month</option>
-          <option value="all">Since launch (Nov 18)</option>
-          <option value="custom">Custom…</option>
-        </select>
-      </label>
+    <div class="hdr-r">
+      <label class="k" for="range">Date range</label>
+      <select id="range">
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="this_week">This week</option>
+        <option value="last_7">Last 7 days</option>
+        <option value="last_14">Last 14 days</option>
+        <option value="last_30">Last 30 days</option>
+        <option value="this_month">This month</option>
+        <option value="last_month">Last month</option>
+        <option value="all">Since launch (Nov 18)</option>
+        <option value="custom">Custom…</option>
+      </select>
       <div class="custom" id="custom" hidden>
-        <label class="day" for="from">From<input type="date" id="from" min="2026-11-18"></label>
-        <label class="day" for="to">To<input type="date" id="to" min="2026-11-18"></label>
+        <input type="date" id="from" min="2026-11-18" aria-label="From"><span>to</span><input type="date" id="to" min="2026-11-18" aria-label="To">
       </div>
       <p class="rlabel" id="rlabel">—</p>
     </div>
   </header>
+
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button type="button" role="tab" id="tab-exec" data-view="exec" aria-selected="true">Executive</button>
+    <button type="button" role="tab" id="tab-ops" data-view="ops" aria-selected="false">Calls &amp; Operations</button>
+  </nav>
+
+  <div id="view-exec" class="view">
 
   <p class="lede"><b id="l-yes">—</b> people said YES out of <b id="l-del">—</b> texts delivered. Reps connected with <b id="l-conn">—</b> of them, and <b id="l-conv">—</b> bought, worth <b id="l-rev">—</b> upfront.</p>
 
@@ -184,6 +206,49 @@
     </div>
   </section>
 
+  </div>
+
+  <div id="view-ops" class="view" hidden>
+    <p class="lede">Of <b id="o-l-yes">—</b> YES leads, reps called <b id="o-l-called">—</b>. The typical wait from their YES to the first call was <b id="o-l-med">—</b>, and <b id="o-l-conn">—</b> connected for 90 seconds or more.</p>
+    <div class="tiles">
+      <div class="card tile-accent"><p class="k">YES leads</p><div class="big" id="o-yes">—</div><div class="note">said YES in this date range</div></div>
+      <div class="card"><p class="k">Called</p><div class="big" id="o-called">—</div><div class="note"><span id="o-called-r">—</span> of YES leads</div></div>
+      <div class="card"><p class="k">Median response</p><div class="big" id="o-med">—</div><div class="note"><span id="o-15">—</span> called within 15 min</div></div>
+      <div class="card"><p class="k">Connected</p><div class="big" id="o-conn">—</div><div class="note"><span id="o-conn-r">—</span> of called · 90 sec+</div></div>
+      <div class="card"><p class="k">Sales</p><div class="big" id="o-sales">—</div><div class="note"><span id="o-conv">—</span> of connected</div></div>
+    </div>
+
+    <section>
+      <h2>Response time</h2>
+      <p>Time from a lead's first YES text to the first call on the Black Friday line.</p>
+      <div class="card"><div class="chart" id="o-resp"></div></div>
+    </section>
+
+    <section>
+      <h2>Call outcomes</h2>
+      <p>Calls on the Black Friday line, grouped by outcome. Pick an outcome to see the dispositions inside it.</p>
+      <div class="two">
+        <div class="card tw"><table>
+          <thead><tr><th>Outcome</th><th class="n">Calls</th><th class="n">People</th><th class="n">Share</th></tr></thead>
+          <tbody id="o-cats"></tbody>
+        </table></div>
+        <div class="card tw">
+          <p class="k" id="o-drill-h">Dispositions</p>
+          <table><thead><tr><th>Disposition</th><th class="n">Calls</th><th class="n">People</th></tr></thead><tbody id="o-drill"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Rep performance</h2>
+      <p>Per rep in this date range. Conversion = sales ÷ people connected 90 sec+. Response time uses each lead's first call.</p>
+      <div class="card tw"><table>
+        <thead><tr><th>Rep</th><th class="n">Leads called</th><th class="n">Calls</th><th class="n">Connected</th><th class="n">Connect rate</th><th class="n">Median response</th><th class="n">Sales</th><th class="n">Upfront</th><th class="n">Conversion</th></tr></thead>
+        <tbody id="o-reps"></tbody>
+      </table></div>
+    </section>
+  </div>
+
   <details class="mini">
     <summary>How each number is counted</summary>
     <div class="tw"><table class="defs">
@@ -198,6 +263,9 @@
         <tr><td>What sold</td><td>BFCM bundles counted on their own. Products with "Trial" in the name are trials, not paid PG1.</td></tr>
         <tr><td>By group</td><td>Past buyers = the main blast list. Failed Close = the HubSpot Failed Close (Oct–Nov) list plus 15 past buyers from it.</td></tr>
         <tr><td>Dates</td><td>Eastern time. Weeks start on Sunday.</td></tr>
+        <tr><td>Response time</td><td>First YES text → first outbound call on the Black Friday line after it. "Not called yet" = no call so far.</td></tr>
+        <tr><td>Call outcomes</td><td>Grouped by the phone team's disposition categories (same sheet as the TMA report). Calls with no disposition are grouped by how the call ended.</td></tr>
+        <tr><td>Rep</td><td>The rep on the call (or the rep it rang, for unanswered preview-dialer calls). Sales are matched to reps by first and last name.</td></tr>
       </tbody>
     </table></div>
   </details>
@@ -338,6 +406,71 @@
     bars($('tr-yes'), list.map(([k, v]) => [lab(k), v[1]]), css('--s2'), 'YES replies');
   }
 
+  // ---------- Calls & Operations
+  const dayOf = (t) => addDays(D.start, Math.floor(t / 1440));
+  const firstOut = new Map();            // person -> sorted outbound call times
+  D.calls.forEach((c) => { if (c[6]) { const a = firstOut.get(c[1]) || []; a.push(c[0]); firstOut.set(c[1], a); } });
+  const callRep = new Map();             // "person|time" -> rep of that call
+  D.calls.forEach((c) => { if (c[6]) callRep.set(c[1] + '|' + c[0], c[2]); });
+  const median = (a) => { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+  const dur = (m) => (m == null ? '—' : m < 1 ? '< 1 min' : m < 60 ? Math.round(m) + ' min' : (m / 60).toFixed(1) + ' h');
+  let pickedCat = null;
+  function ops(f, e) {
+    const C = D.calls.filter((c) => { const d = dayOf(c[0]); return d >= f && d <= e; });
+    const Y = D.yesFirst.filter((y) => { const d = dayOf(y[0]); return d >= f && d <= e; });
+    const resp = [], buckets = [0, 0, 0, 0, 0, 0, 0], repResp = new Map();
+    Y.forEach(([t, i]) => {
+      const a = firstOut.get(i) || [], c = a.find((x) => x >= t);
+      if (c == null) { buckets[6]++; return; }
+      const m = c - t; resp.push(m);
+      buckets[m <= 5 ? 0 : m <= 15 ? 1 : m <= 30 ? 2 : m <= 60 ? 3 : m <= 120 ? 4 : 5]++;
+      const r = callRep.get(i + '|' + c); if (r != null && r >= 0) { const x = repResp.get(r) || []; x.push(m); repResp.set(r, x); }
+    });
+    const out = C.filter((c) => c[6]);
+    const calledP = new Set(out.map((c) => c[1])), connP = new Set(C.filter((c) => c[3] >= 90).map((c) => c[1]));
+    const yesSet = new Set(Y.map((y) => y[1]));
+    const calledYes = [...yesSet].filter((i) => (firstOut.get(i) || []).some((x) => dayOf(x) >= f && dayOf(x) <= e)).length;
+    const O = D.orders.filter((o) => o[0] >= f && o[0] <= e);
+    const cats = new Map();
+    C.forEach((c) => { const x = cats.get(c[4]) || { calls: 0, ppl: new Set(), d: new Map() }; x.calls++; x.ppl.add(c[1]);
+      const y = x.d.get(c[5]) || { calls: 0, ppl: new Set() }; y.calls++; y.ppl.add(c[1]); x.d.set(c[5], y); cats.set(c[4], x); });
+    const reps = new Map();
+    const R = (k) => { if (!reps.has(k)) reps.set(k, { calls: 0, ppl: new Set(), conn: new Set(), sales: 0, up: 0 }); return reps.get(k); };
+    out.forEach((c) => { if (c[2] < 0) return; const r = R(c[2]); r.calls++; r.ppl.add(c[1]); });
+    C.forEach((c) => { if (c[2] >= 0 && c[3] >= 90) R(c[2]).conn.add(c[1]); });
+    O.forEach((o) => { if (o[5] >= 0) { const r = R(o[5]); r.sales++; r.up += o[3]; } });
+    return { yes: Y.length, calledYes, med: median(resp), within15: buckets[0] + buckets[1], answeredResp: resp.length, buckets,
+      called: calledP.size, conn: connP.size, sales: O.length, calls: C.length, cats, reps, repResp };
+  }
+  function renderOps(f, e) {
+    const o = ops(f, e), r1 = (a, b) => (b ? (a / b * 100).toFixed(1) + '%' : '—');
+    setText('o-l-yes', int(o.yes)); setText('o-l-called', int(o.calledYes)); setText('o-l-med', dur(o.med)); setText('o-l-conn', int(o.conn));
+    setText('o-yes', int(o.yes)); setText('o-called', int(o.calledYes)); setText('o-called-r', r1(o.calledYes, o.yes));
+    setText('o-med', dur(o.med)); setText('o-15', r1(o.within15, o.yes));
+    setText('o-conn', int(o.conn)); setText('o-conn-r', r1(o.conn, o.called)); setText('o-sales', int(o.sales)); setText('o-conv', r1(o.sales, o.conn));
+    const bl = ['≤ 5 min', '5–15 min', '15–30 min', '30–60 min', '1–2 h', '> 2 h', 'Not called yet'];
+    bars($('o-resp'), bl.map((l, i) => [l, o.buckets[i]]), css('--s1'), 'YES leads');
+    const cl = [...o.cats.entries()].sort((a, b) => b[1].calls - a[1].calls);
+    if (pickedCat == null || !o.cats.has(pickedCat)) pickedCat = cl.length ? cl[0][0] : null;
+    const tb = $('o-cats'); tb.replaceChildren();
+    if (!cl.length) { const td = tb.insertRow().insertCell(); td.colSpan = 4; td.className = 'empty'; td.textContent = 'No calls in this date range.'; }
+    cl.forEach(([k, x]) => {
+      const tr = tb.insertRow(); tr.className = 'pick' + (k === pickedCat ? ' on' : ''); tr.tabIndex = 0;
+      [D.cats[k], int(x.calls), int(x.ppl.size), r1(x.calls, o.calls)].forEach((v, i) => { const td = tr.insertCell(); td.textContent = v; if (i) td.className = 'n'; });
+      const pick = () => { pickedCat = k; renderOps(f, e); };
+      tr.addEventListener('click', pick); tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); pick(); } });
+    });
+    setText('o-drill-h', pickedCat == null ? 'Dispositions' : 'Dispositions in ' + D.cats[pickedCat]);
+    const db = $('o-drill'); db.replaceChildren();
+    const dl = pickedCat == null ? [] : [...o.cats.get(pickedCat).d.entries()].sort((a, b) => b[1].calls - a[1].calls);
+    if (!dl.length) { const td = db.insertRow().insertCell(); td.colSpan = 3; td.className = 'empty'; td.textContent = 'Pick an outcome.'; }
+    dl.forEach(([k, y]) => { const tr = db.insertRow(); [D.disps[k], int(y.calls), int(y.ppl.size)].forEach((v, i) => { const td = tr.insertCell(); td.textContent = v; if (i) td.className = 'n'; }); });
+    const rl = [...o.reps.entries()].map(([k, r]) => [D.reps[k], r.ppl.size, r.calls, r.conn.size, r1(r.conn.size, r.ppl.size), dur(median(o.repResp.get(k) || [])), r.sales, r.up, r1(r.sales, r.conn.size)])
+      .sort((a, b) => b[7] - a[7] || b[3] - a[3] || b[1] - a[1]);
+    rows($('o-reps'), rl, [null, int, int, int, null, null, int, money, null], 'No rep activity in this date range.');
+    $('o-reps').querySelectorAll('tr').forEach((tr) => { [4, 5, 8].forEach((i) => { if (tr.cells[i]) tr.cells[i].className = 'n'; }); });
+  }
+
   function render() {
     $('custom').hidden = sel.value !== 'custom';
     const [f, e] = range(), m = compute(f, e);
@@ -356,11 +489,20 @@
     bars($('h-sent'), m.hours.map((h) => [hl(h[0]), h[1]]), css('--s1'), 'texts');
     bars($('h-yes'), m.hours.map((h) => [hl(h[0]), h[2]]), css('--s2'), 'YES replies');
     trend();
+    renderOps(f, e);
   }
 
   document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
     grain = b.dataset.g; document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); trend();
   }));
+  function showView(v) {
+    document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.view === v)));
+    $('view-exec').hidden = v !== 'exec'; $('view-ops').hidden = v !== 'ops';
+    try { if (location.hash !== (v === 'ops' ? '#ops' : '')) history.replaceState(null, '', v === 'ops' ? '#ops' : location.pathname + location.search); } catch (err) { /* some viewers block it */ }
+    render();
+  }
+  document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => showView(b.dataset.view)));
+  window.addEventListener('hashchange', () => showView(location.hash === '#ops' ? 'ops' : 'exec'));
   sel.addEventListener('change', () => {
     if (sel.value === 'custom' && !fromEl.value) { const [f, e] = [FIRST, TODAY]; fromEl.value = f; toEl.value = e; }
     render();
@@ -369,11 +511,13 @@
   let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
   const when = (t) => { if (!t) return '—'; const d = new Date(t.replace(' ', 'T')); return dlabel(t.slice(0, 10)) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' ET'; };
-  setText('u-sms', when(D.updated.sms)); setText('u-calls', when(D.updated.calls)); setText('u-sales', when(D.updated.sales));
+  const short = (t) => { if (!t) return '—'; const d = new Date(t.replace(' ', 'T')), tm = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' ET';
+    return t.slice(0, 10) === TODAY ? 'today ' + tm : dlabel(t.slice(0, 10)) + ', ' + tm; };
+  setText('u-sms', short(D.updated.sms)); setText('u-calls', short(D.updated.calls)); setText('u-sales', short(D.updated.sales));
   setText('built', when(D.built));
   const src = $('sources'); src.replaceChildren();
   D.sourceList.forEach((r) => { const tr = src.insertRow(); [r[0], r[1], r[2], r[3] ? when(r[3]) : '—'].forEach((v) => { tr.insertCell().textContent = v; }); });
-  render();
+  showView(location.hash === '#ops' ? 'ops' : 'exec');
 })();
 </script>
 </body>

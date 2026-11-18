@@ -26,6 +26,7 @@ _d = _glob.glob(os.path.expanduser('~/Library/CloudStorage/GoogleDrive-*/My Driv
 LOCAL_DRIVE = os.environ.get('BF_LOCAL_DRIVE', _d[0] if _d else '')   # Drive for desktop on the Mac
 SMS_FOLDER_ID = '1I5mnmGSrueNfuGrkjdZmnb6lUXqtOXvz'      # Phone Team Reports / Black Friday SMS
 CALLS_FOLDER_ID = '1nR7-OTb_MJ6jYf3xpEWLKtBco2a1ok85'    # Phone Team Reports / Aloware Call Logs - BF2 (month subfolders)
+DISP_SHEET_ID = '1RjRCw6RVCbxpevhxGliESgAZgOvJnMMinR9Bv62o8d4'   # Call Disposition Category (main source), same as TMA
 TRACKER_ID, TRACKER_TAB = '1VeSDG4zeyn_nfsd2FuSk7I0A6CqhJfJlU1nbN8W1qCI', 'Call Tracking'
 SMS_PATTERN = r'^Aloware - Blackfish 2 - Black Friday SMS logs - WB\d{4}\.csv$'
 CALLS_PATTERN = r'^Aloware - Blackfish 2 - Call logs - WB\d{4}\.csv$'

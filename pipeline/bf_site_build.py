@@ -44,6 +44,50 @@ def kind(p):
 
 
 sms_files, call_files, _ = inputs()
+
+
+def load_dispositions():
+    """{disposition: category} from the TMA disposition master sheet; cached so a failed read keeps the last copy."""
+    cache = os.path.join(WORK, 'dispositions.json')
+    try:
+        import gspread, warnings; warnings.filterwarnings('ignore')
+        from google.oauth2.service_account import Credentials
+        cr = Credentials.from_service_account_file(SA_KEY, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
+        m = {}
+        for w in gspread.authorize(cr).open_by_key(DISP_SHEET_ID).worksheets():
+            if not w.title.strip().lower().startswith('call disposition'): continue
+            v = w.get_all_values()
+            if not v: continue
+            h = [x.strip().lower() for x in v[0]]
+            di = h.index('call disposition') if 'call disposition' in h else 0
+            ci = h.index('disposition category') if 'disposition category' in h else 1
+            for r in v[1:]:
+                if len(r) > max(di, ci) and r[di].strip() and r[ci].strip() and r[di].strip() not in m:
+                    m[r[di].strip()] = r[ci].strip()
+        if m:
+            json.dump(m, open(cache, 'w'))
+            return m
+    except Exception as e:
+        print('disposition sheet not read (%s); using cache' % str(e)[:80])
+    return json.load(open(cache)) if os.path.exists(cache) else {}
+
+
+DISP = load_dispositions()
+
+
+def category(disp, status, talk):
+    d = (disp or '').strip()
+    if d:
+        if d in DISP: return DISP[d]
+        l = d.lower()
+        for keys, cat in [(('vm', 'unreachable', 'voicemail'), 'Unreachable/Voicemail'), (('busy', 'follow up', 'ffup', 'callback', 'call back'), 'Busy/Follow Up'),
+                          (('declined', 'not interested'), 'Declined'), (('sold',), 'Sold'), (('transfer',), 'Transferred call'),
+                          (('refund',), 'Refunded'), (('dnc', 'do not call'), 'DNC'), (('wrong', 'invalid'), 'Invalid number')]:
+            if any(k in l for k in keys): return cat
+        return 'Other'
+    if status == 'failed': return 'No answer / failed'
+    if status in ('abandoned', 'missed'): return 'Abandoned / missed'
+    return 'No outcome logged' if talk < 90 else 'Talked, no outcome logged'
 seen, sms = set(), []
 for f in sms_files:
     for r in rd(f):
@@ -112,15 +156,57 @@ gi = {g: i for i, g in enumerate(G['groups'])}
 pg = [-1] * len(idx)
 for p, i in idx.items():
     g = group_of_phone(p); pg[i] = gi[g] if g in gi else -1
+# calls (BF line) for the operations view: one row per call, people/reps/outcomes as index numbers
+def tmin(t):
+    try:
+        return int((datetime.datetime.strptime(t[:19], '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(START, '%Y-%m-%d')).total_seconds() // 60)
+    except ValueError:
+        return None
+norm = lambda n: re.sub(r'[^a-z ]', '', (n or '').lower()).split()
+fl = lambda n: (lambda t: (t[0], t[-1]) if t else None)(norm(n))
+reps, rep_ix = [], {}
+def rid(name):
+    k = fl(name)
+    if not k: return -1
+    if k not in rep_ix: rep_ix[k] = len(reps); reps.append(name.strip())
+    return rep_ix[k]
+cats, cat_ix, disps, disp_ix = [], {}, [], {}
+def ix(lst, d, v):
+    if v not in d: d[v] = len(lst); lst.append(v)
+    return d[v]
+call_rows = []
+for r in calls:
+    p = p10(r['Contact Number']); t = tmin(r['Started At'])
+    if not p or t is None: continue
+    who = (r.get('User Name') or '').strip() or (r.get('Attempting') or '').split(',')[0].strip()
+    talk = sec(r['Talk Time'])
+    disp = (r.get('Call Disposition') or '').strip()
+    cat = category(disp, r['Disposition Status'], talk)
+    call_rows.append([t, pid(p), rid(who), talk, ix(cats, cat_ix, cat), ix(disps, disp_ix, disp or '(none) ' + r['Disposition Status']),
+                      1 if r['Direction'] == 'outbound' else 0])
+call_rows.sort()
+yes_first = {}
+for r in sms:
+    if r['Direction'] == 'inbound' and YES in (r.get('Tags') or '') and p10(r['Contact Number']):
+        i, t = pid(p10(r['Contact Number'])), tmin(r['Started At'])
+        if t is not None and (i not in yes_first or t < yes_first[i]): yes_first[i] = t
+yes_rows = sorted([[t, i] for i, t in yes_first.items()])
+for o in orders: o['rep_i'] = rid(o['rep'])
+pg = pg + [-1] * (len(idx) - len(pg))
+for p, i in idx.items():
+    if pg[i] == -1:
+        g = group_of_phone(p); pg[i] = gi[g] if g in gi else -1
+
 days = {d: {'sent': x['sent'], 'failed': x['failed'], 'yesTexts': x['yesTexts'],
             'hours': [[h, v[0], v[1]] for h, v in sorted(x['hours'].items())],
             **{k: sorted(x[k]) for k in ('texted', 'replied', 'yes', 'no', 'dnc', 'called', 'conn')}} for d, x in sorted(per.items())}
 order_rows = [[o['date'], o['rep'], [[it, kind(it)] for it in o['items']], round(o['upfront'], 2),
-               gi.get(group_of_email(o['customer']), -1)] for o in orders]
+               gi.get(group_of_email(o['customer']), -1), o['rep_i']] for o in orders]
 asof = max([r['Started At'] for r in sms] + [''])
 sales_asof = json.load(open(SALES_META))['pulled_at'] if os.path.exists(SALES_META) else ''
 core = {'updated': {'sms': asof, 'calls': call_asof}, 'days': days, 'orders': order_rows, 'pg': pg,
-        'groups': G['groups'], 'gsize': [G['size'].get(g, 0) for g in G['groups']]}
+        'groups': G['groups'], 'gsize': [G['size'].get(g, 0) for g in G['groups']],
+        'calls': call_rows, 'yesFirst': yes_rows, 'reps': reps, 'cats': cats, 'disps': disps, 'start': START}
 data = dict(core, asof=asof, built=now_et().strftime('%Y-%m-%d %H:%M'))
 data['updated'] = dict(core['updated'], sales=sales_asof)
 data['sourceList'] = [
