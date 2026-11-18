@@ -61,9 +61,11 @@ def load_dispositions():
             h = [x.strip().lower() for x in v[0]]
             di = h.index('call disposition') if 'call disposition' in h else 0
             ci = h.index('disposition category') if 'disposition category' in h else 1
+            si = next((i for i, x in enumerate(h) if x.startswith('suggested category')), None)   # used until column B is filled
             for r in v[1:]:
-                if len(r) > max(di, ci) and r[di].strip() and r[ci].strip() and r[di].strip() not in m:
-                    m[r[di].strip()] = r[ci].strip()
+                if len(r) <= max(di, ci) or not r[di].strip() or r[di].strip() in m: continue
+                c = r[ci].strip() or (r[si].strip() if si is not None and len(r) > si else '')
+                if c: m[r[di].strip()] = c
         if m:
             json.dump(m, open(cache, 'w'))
             return m
@@ -183,7 +185,7 @@ for r in calls:
     disp = (r.get('Call Disposition') or '').strip()
     cat = category(disp, r['Disposition Status'], talk)
     call_rows.append([t, pid(p), rid(who), talk, ix(cats, cat_ix, cat), ix(disps, disp_ix, disp or '(none) ' + r['Disposition Status']),
-                      1 if r['Direction'] == 'outbound' else 0])
+                      1 if r['Direction'] == 'outbound' else 0, 1 if r['Disposition Status'] == 'completed' else 0])
 call_rows.sort()
 yes_first = {}
 for r in sms:

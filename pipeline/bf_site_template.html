@@ -12,13 +12,14 @@
     --pebble: #DFD9D5; --sand: #ECE9E4; --fog: #F4F2F0; --mist: #FCFAFA;
     --bg: var(--fog); --card: var(--mist); --fg: var(--ink); --muted: var(--gray); --line: var(--pebble);
     --s1: var(--orange); --s2: var(--ink); --grid: var(--sand);
+    --good: #2E7D4F; --warn: #C98A00; --bad: #C62828; --c5: #F29A7A; --c6: #8C2A10; --c7: #3F6E9E; --c8: #5E8C6A; --c9: #C9A227;
     --font: Repro, "Helvetica Neue", Helvetica, Arial, sans-serif;
     --display: "GT Super Text", "GT Super", Georgia, serif;
     --mono: "Repro Mono", ui-monospace, Menlo, Consolas, monospace;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) { :root {
-    --bg: #1D1A1A; --card: #2A2626; --fg: #FCFAFA; --muted: #B3AAA3; --line: #3D3737; --s2: #DFD9D5; --grid: #332E2E; color-scheme: dark; } }
+    --bg: #1D1A1A; --card: #2A2626; --fg: #FCFAFA; --muted: #B3AAA3; --line: #3D3737; --s2: #DFD9D5; --grid: #332E2E; --good: #5CB881; --warn: #E3B341; --bad: #F26B6B; --c6: #D4693F; --c7: #7FA8D6; --c8: #8FBF9A; color-scheme: dark; } }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 var(--font); }
   .wrap { max-width: 1180px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 28px; }
@@ -78,6 +79,27 @@
   .chart { position: relative; min-height: 220px; }
   svg text { font-family: var(--font); font-size: 11px; fill: var(--muted); }
   svg .val { fill: var(--fg); font-family: var(--mono); }
+  .three { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; align-items: start; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+  .legend i.ln { height: 3px; border-radius: 2px; width: 16px; }
+  .donuts { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+  .donut { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; align-items: center; }
+  .donut h3 { grid-column: 1 / -1; margin: 0; font: 600 14px/1.2 var(--font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .donut ul { list-style: none; margin: 0; padding: 0; font-size: 12px; display: grid; gap: 3px; min-width: 0; }
+  .donut li { display: flex; gap: 6px; align-items: center; white-space: nowrap; overflow: hidden; }
+  .donut li b { margin-left: auto; font: 12px var(--mono); }
+  .donut li i { flex: none; width: 8px; height: 8px; border-radius: 2px; }
+  .donut li span { overflow: hidden; text-overflow: ellipsis; }
+  .gauge { display: grid; justify-items: center; gap: 4px; }
+  .gauge .gv { font: 600 30px/1 var(--mono); margin-top: -64px; }
+  .gauge .gl { font-size: 12px; color: var(--muted); }
+  table.sortable th { cursor: pointer; user-select: none; }
+  table.sortable th:hover { color: var(--fg); }
+  table.sortable th[aria-sort="ascending"]::after { content: " ▲"; font-size: 9px; }
+  table.sortable th[aria-sort="descending"]::after { content: " ▼"; font-size: 9px; }
+  tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
   .tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font: 12px var(--mono); box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
   .seg button { font: inherit; font-size: 12px; padding: 6px 14px; background: var(--card); color: var(--fg); border: 0; cursor: pointer; }
@@ -220,14 +242,29 @@
 
     <section>
       <h2>Response time</h2>
-      <p>Time from a lead's first YES text to the first call on the Black Friday line.</p>
-      <div class="card"><div class="chart" id="o-resp"></div></div>
+      <p>From a lead's first YES text to our first call. Target: <b>5 min</b> average, and every YES called within <b>30 min</b> during hours (8 AM–5 PM ET).</p>
+      <div class="two">
+        <div class="card"><p class="k">Average callback to YES leads (during hours)</p><div id="o-gauge"></div></div>
+        <div class="card"><p class="k">Response status</p><div class="chart" id="o-status"></div></div>
+      </div>
+      <div class="card" style="margin-top:20px"><p class="k">How long YES leads waited</p><div class="chart" id="o-resp"></div></div>
+    </section>
+
+    <section>
+      <div class="row">
+        <h2>Calls trend</h2>
+        <div class="seg" id="o-seg" role="group" aria-label="Calls trend period">
+          <button type="button" data-g="day" aria-pressed="true">Daily</button><button type="button" data-g="week" aria-pressed="false">Weekly</button><button type="button" data-g="month" aria-pressed="false">Monthly</button>
+        </div>
+      </div>
+      <p>Whole campaign. Bars are outbound calls; lines are connect % (people connected 90 sec+ ÷ people called) and conversion % (sales ÷ people connected).</p>
+      <div class="card"><div class="legend" id="o-tr-leg"></div><div class="chart" id="o-trend"></div></div>
     </section>
 
     <section>
       <h2>Call outcomes</h2>
-      <p>Calls on the Black Friday line, grouped by outcome. Pick an outcome to see the dispositions inside it.</p>
-      <div class="two">
+      <p>Calls on the Black Friday line, grouped by outcome. Pick an outcome to see its dispositions, then a disposition to see the reps.</p>
+      <div class="three">
         <div class="card tw"><table>
           <thead><tr><th>Outcome</th><th class="n">Calls</th><th class="n">People</th><th class="n">Share</th></tr></thead>
           <tbody id="o-cats"></tbody>
@@ -236,16 +273,28 @@
           <p class="k" id="o-drill-h">Dispositions</p>
           <table><thead><tr><th>Disposition</th><th class="n">Calls</th><th class="n">People</th></tr></thead><tbody id="o-drill"></tbody></table>
         </div>
+        <div class="card tw">
+          <p class="k" id="o-drill2-h">Reps</p>
+          <table><thead><tr><th>Rep</th><th class="n">Calls</th><th class="n">People</th></tr></thead><tbody id="o-drill2"></tbody></table>
+        </div>
       </div>
     </section>
 
     <section>
       <h2>Rep performance</h2>
-      <p>Per rep in this date range. Conversion = sales ÷ people connected 90 sec+. Response time uses each lead's first call.</p>
-      <div class="card tw"><table>
-        <thead><tr><th>Rep</th><th class="n">Leads called</th><th class="n">Calls</th><th class="n">Connected</th><th class="n">Connect rate</th><th class="n">Median response</th><th class="n">Sales</th><th class="n">Upfront</th><th class="n">Conversion</th></tr></thead>
+      <p>Per rep in this date range. Click a column to sort. Conversion = sales ÷ people connected 90 sec+. Response time uses each lead's first call.</p>
+      <div class="card tw"><table class="sortable" id="o-rep-t">
+        <thead><tr><th data-k="0">Rep</th><th class="n" data-k="1">Leads called</th><th class="n" data-k="2">Calls</th><th class="n" data-k="3">Connected</th><th class="n" data-k="4">Connect rate</th><th class="n" data-k="5">Avg response</th><th class="n" data-k="6">Sales</th><th class="n" data-k="7">Upfront</th><th class="n" data-k="8">Conversion</th></tr></thead>
         <tbody id="o-reps"></tbody>
+        <tfoot id="o-reps-tot"></tfoot>
       </table></div>
+    </section>
+
+    <section>
+      <h2>Outcomes by rep</h2>
+      <p>Share of each rep's calls by outcome in this date range. The middle shows their call count.</p>
+      <div class="legend" id="o-donut-leg"></div>
+      <div class="donuts" id="o-donuts"></div>
     </section>
   </div>
 
@@ -265,6 +314,9 @@
         <tr><td>Dates</td><td>Eastern time. Weeks start on Sunday.</td></tr>
         <tr><td>Response time</td><td>First YES text → first outbound call on the Black Friday line after it. "Not called yet" = no call so far.</td></tr>
         <tr><td>Call outcomes</td><td>Grouped by the phone team's disposition categories (same sheet as the TMA report). Calls with no disposition are grouped by how the call ended.</td></tr>
+        <tr><td>Avg callback (gauge)</td><td>Average minutes from a YES text sent 8 AM–5 PM ET to our first outbound call. Green at 5 min or less, amber up to 10, red above.</td></tr>
+        <tr><td>Response status</td><td>Each YES lead once: On time = called within 30 min during hours; Late = called after 30 min; Inbound completed = they called us first; Outside hoop = YES came before 8 AM or after 5 PM ET; No callback found = not called yet.</td></tr>
+        <tr><td>Outcome</td><td>The category in the Call Disposition sheet. New dispositions use the suggested category until the sheet's category column is filled.</td></tr>
         <tr><td>Rep</td><td>The rep on the call (or the rep it rang, for unanswered preview-dialer calls). Sales are matched to reps by first and last name.</td></tr>
       </tbody>
     </table></div>
@@ -406,70 +458,248 @@
     bars($('tr-yes'), list.map(([k, v]) => [lab(k), v[1]]), css('--s2'), 'YES replies');
   }
 
-  // ---------- Calls & Operations
+  // ---------- Calls & Operations (response time, status and gauge follow the TMA report rules)
+  const HOOP = [8, 17], SLA = 30, RT_TARGET = 5;
   const dayOf = (t) => addDays(D.start, Math.floor(t / 1440));
-  const firstOut = new Map();            // person -> sorted outbound call times
-  D.calls.forEach((c) => { if (c[6]) { const a = firstOut.get(c[1]) || []; a.push(c[0]); firstOut.set(c[1], a); } });
-  const callRep = new Map();             // "person|time" -> rep of that call
-  D.calls.forEach((c) => { if (c[6]) callRep.set(c[1] + '|' + c[0], c[2]); });
+  const inHoop = (t) => { const h = Math.floor((t % 1440) / 60); return h >= HOOP[0] && h < HOOP[1]; };
+  const outT = new Map(), incT = new Map(), callRep = new Map();   // person -> outbound call times / inbound completed times
+  D.calls.forEach((c) => {
+    if (c[6]) { const a = outT.get(c[1]) || []; a.push(c[0]); outT.set(c[1], a); callRep.set(c[1] + '|' + c[0], c[2]); }
+    else if (c[7]) { const a = incT.get(c[1]) || []; a.push(c[0]); incT.set(c[1], a); }
+  });
   const median = (a) => { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
-  const dur = (m) => (m == null ? '—' : m < 1 ? '< 1 min' : m < 60 ? Math.round(m) + ' min' : (m / 60).toFixed(1) + ' h');
-  let pickedCat = null;
+  const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+  const dur = (m) => (m == null ? '—' : m < 1 ? '< 1 min' : m < 60 ? (m < 10 ? m.toFixed(1) : Math.round(m)) + ' min' : (m / 60).toFixed(1) + ' h');
+  const STATUS = [['On time', '--good'], ['Late', '--bad'], ['Inbound completed', '--s2'], ['No callback found', '--stone'], ['Outside hoop', '--warn'], ['Outside hoop · no callback', '--pebble']];
+  const PAL = ['--orange', '--s2', '--gray', '--stone', '--c5', '--c6', '--c7', '--c8', '--c9', '--pebble'];
+  let catRank = new Map();            // outcome -> rank by calls in the date range (top 9 get their own color)
+  const OTHER = -2;
+  const catColor = (k) => css(k === OTHER ? '--pebble' : PAL[Math.min(catRank.has(k) ? catRank.get(k) : 9, 9)]);
+  const catName = (k) => (k === OTHER ? 'Other outcomes' : D.cats[k]);
+  const fold = (k) => (catRank.has(k) && catRank.get(k) < 9 ? k : OTHER);
+  let pickedCat = null, pickedDisp = null, opsGrain = 'day', repSort = [7, -1];
+
+  function statusOf(t, i) {
+    const o = (outT.get(i) || []).find((x) => x >= t), n = (incT.get(i) || []).find((x) => x >= t);
+    if (n != null && (o == null || n < o)) return ['Inbound completed', n - t, null];
+    if (inHoop(t)) return o != null ? [o - t <= SLA ? 'On time' : 'Late', o - t, o] : ['No callback found', null, null];
+    return o != null ? ['Outside hoop', o - t, o] : ['Outside hoop · no callback', null, null];
+  }
+
   function ops(f, e) {
-    const C = D.calls.filter((c) => { const d = dayOf(c[0]); return d >= f && d <= e; });
-    const Y = D.yesFirst.filter((y) => { const d = dayOf(y[0]); return d >= f && d <= e; });
-    const resp = [], buckets = [0, 0, 0, 0, 0, 0, 0], repResp = new Map();
+    const inR = (t) => { const d = dayOf(t); return d >= f && d <= e; };
+    const C = D.calls.filter((c) => inR(c[0])), Y = D.yesFirst.filter((y) => inR(y[0]));
+    const resp = [], hoopResp = [], buckets = [0, 0, 0, 0, 0, 0, 0], repResp = new Map(), status = new Map();
     Y.forEach(([t, i]) => {
-      const a = firstOut.get(i) || [], c = a.find((x) => x >= t);
-      if (c == null) { buckets[6]++; return; }
-      const m = c - t; resp.push(m);
-      buckets[m <= 5 ? 0 : m <= 15 ? 1 : m <= 30 ? 2 : m <= 60 ? 3 : m <= 120 ? 4 : 5]++;
-      const r = callRep.get(i + '|' + c); if (r != null && r >= 0) { const x = repResp.get(r) || []; x.push(m); repResp.set(r, x); }
+      const [st, m, o] = statusOf(t, i);
+      status.set(st, (status.get(st) || 0) + 1);
+      const fo = (outT.get(i) || []).find((x) => x >= t);
+      if (fo == null) { buckets[6]++; } else {
+        const w = fo - t; resp.push(w);
+        buckets[w <= 5 ? 0 : w <= 15 ? 1 : w <= 30 ? 2 : w <= 60 ? 3 : w <= 120 ? 4 : 5]++;
+        const r = callRep.get(i + '|' + fo); if (r != null && r >= 0) { const x = repResp.get(r) || []; x.push(w); repResp.set(r, x); }
+      }
+      if (o != null && (st === 'On time' || st === 'Late')) hoopResp.push(m);
     });
     const out = C.filter((c) => c[6]);
     const calledP = new Set(out.map((c) => c[1])), connP = new Set(C.filter((c) => c[3] >= 90).map((c) => c[1]));
-    const yesSet = new Set(Y.map((y) => y[1]));
-    const calledYes = [...yesSet].filter((i) => (firstOut.get(i) || []).some((x) => dayOf(x) >= f && dayOf(x) <= e)).length;
+    const calledYes = Y.filter(([, i]) => (outT.get(i) || []).some(inR)).length;
     const O = D.orders.filter((o) => o[0] >= f && o[0] <= e);
     const cats = new Map();
-    C.forEach((c) => { const x = cats.get(c[4]) || { calls: 0, ppl: new Set(), d: new Map() }; x.calls++; x.ppl.add(c[1]);
-      const y = x.d.get(c[5]) || { calls: 0, ppl: new Set() }; y.calls++; y.ppl.add(c[1]); x.d.set(c[5], y); cats.set(c[4], x); });
+    C.forEach((c) => {
+      const x = cats.get(c[4]) || { calls: 0, ppl: new Set(), d: new Map() }; x.calls++; x.ppl.add(c[1]);
+      const y = x.d.get(c[5]) || { calls: 0, ppl: new Set(), r: new Map() }; y.calls++; y.ppl.add(c[1]);
+      const z = y.r.get(c[2]) || { calls: 0, ppl: new Set() }; z.calls++; z.ppl.add(c[1]); y.r.set(c[2], z);
+      x.d.set(c[5], y); cats.set(c[4], x);
+    });
     const reps = new Map();
-    const R = (k) => { if (!reps.has(k)) reps.set(k, { calls: 0, ppl: new Set(), conn: new Set(), sales: 0, up: 0 }); return reps.get(k); };
-    out.forEach((c) => { if (c[2] < 0) return; const r = R(c[2]); r.calls++; r.ppl.add(c[1]); });
+    const R = (k) => { if (!reps.has(k)) reps.set(k, { calls: 0, ppl: new Set(), conn: new Set(), sales: 0, up: 0, cats: new Map() }); return reps.get(k); };
+    out.forEach((c) => { if (c[2] < 0) return; const r = R(c[2]); r.calls++; r.ppl.add(c[1]); r.cats.set(c[4], (r.cats.get(c[4]) || 0) + 1); });
     C.forEach((c) => { if (c[2] >= 0 && c[3] >= 90) R(c[2]).conn.add(c[1]); });
     O.forEach((o) => { if (o[5] >= 0) { const r = R(o[5]); r.sales++; r.up += o[3]; } });
-    return { yes: Y.length, calledYes, med: median(resp), within15: buckets[0] + buckets[1], answeredResp: resp.length, buckets,
-      called: calledP.size, conn: connP.size, sales: O.length, calls: C.length, cats, reps, repResp };
+    return { yes: Y.length, calledYes, med: median(resp), within15: buckets[0] + buckets[1], buckets, status, gauge: avg(hoopResp), hoopN: hoopResp.length,
+      called: calledP.size, conn: connP.size, sales: O.length, revenue: O.reduce((a, o) => a + o[3], 0), calls: C.length, outCalls: out.length, cats, reps, repResp };
   }
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const svgEl = (W, H, label) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', `0 0 ${W} ${H}`); s.setAttribute('width', '100%'); s.setAttribute('role', 'img'); s.setAttribute('aria-label', label); return s; };
+  const mkIn = (svg) => (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+  const arc = (cx, cy, r, a0, a1) => { const p = (a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)]; const [x0, y0] = p(a0), [x1, y1] = p(a1);
+    return `M${x0} ${y0} A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}`; };
+
+  function gauge(el, v, n) {
+    el.replaceChildren(); el.className = 'gauge';
+    const max = Math.max(RT_TARGET * 3, (v || 0) * 1.3, 10), val = v == null ? 0 : Math.min(v, max);
+    const col = v == null ? css('--stone') : v <= RT_TARGET ? css('--good') : v <= RT_TARGET * 2 ? css('--warn') : css('--bad');
+    const W = 240, H = 140, cx = 120, cy = 124, r = 96, svg = svgEl(W, H, 'Average callback ' + (v == null ? 'none' : v.toFixed(1) + ' minutes') + ', target ' + RT_TARGET + ' minutes'), mk = mkIn(svg);
+    svg.style.maxWidth = '300px';
+    mk('path', { d: arc(cx, cy, r, Math.PI, 2 * Math.PI), fill: 'none', stroke: css('--grid'), 'stroke-width': 22 });
+    if (val > 0) mk('path', { d: arc(cx, cy, r, Math.PI, Math.PI + Math.PI * (val / max)), fill: 'none', stroke: col, 'stroke-width': 22 });
+    const ta = Math.PI + Math.PI * (RT_TARGET / max);
+    mk('line', { x1: cx + (r - 16) * Math.cos(ta), y1: cy + (r - 16) * Math.sin(ta), x2: cx + (r + 16) * Math.cos(ta), y2: cy + (r + 16) * Math.sin(ta), stroke: css('--fg'), 'stroke-width': 2 });
+    mk('text', { x: cx - r, y: cy + 14, 'text-anchor': 'middle' }).textContent = '0';
+    mk('text', { x: cx + r, y: cy + 14, 'text-anchor': 'middle' }).textContent = Math.round(max) + 'm';
+    el.appendChild(svg);
+    const gv = document.createElement('div'); gv.className = 'gv'; gv.style.color = col; gv.textContent = v == null ? '—' : v.toFixed(1) + ' min'; el.appendChild(gv);
+    const gl = document.createElement('div'); gl.className = 'gl'; gl.textContent = `avg · target ${RT_TARGET} min · ${int(n)} YES leads called during hours`; el.appendChild(gl);
+  }
+
+  function hbars(el, data, total) {      // [label, value, color]
+    el.replaceChildren(); el.style.minHeight = 'auto';
+    if (!total) { const p = document.createElement('div'); p.className = 'empty'; p.textContent = 'No YES leads in this date range.'; el.appendChild(p); return; }
+    const W = Math.max(el.clientWidth, 280), rowH = 30, H = data.length * rowH, lab = 170, valw = 92, span = Math.max(W - lab - valw, 40);
+    const svg = svgEl(W, H, data.map((d) => d[0] + ' ' + d[1]).join(', ')), mk = mkIn(svg), max = Math.max(...data.map((d) => d[1]), 1);
+    data.forEach((d, i) => {
+      const y = i * rowH, w = Math.max((d[1] / max) * span, d[1] ? 2 : 0);
+      mk('text', { x: 0, y: y + rowH / 2 + 4, class: 'val' }).textContent = d[0];
+      mk('rect', { x: lab, y: y + 6, width: w, height: rowH - 12, rx: 3, fill: d[2] });
+      mk('text', { x: lab + w + 8, y: y + rowH / 2 + 4 }).textContent = int(d[1]) + ' · ' + (d[1] / total * 100).toFixed(0) + '%';
+    });
+    el.appendChild(svg);
+  }
+
+  function combo(el, data) {             // [label, calls, connect %, conversion %]
+    el.replaceChildren();
+    if (!data.length) { const p = document.createElement('div'); p.className = 'empty'; p.textContent = 'No calls yet.'; el.appendChild(p); return; }
+    const W = Math.max(el.clientWidth, 280), H = 240, T = 18, B = 24;
+    const max = Math.max(...data.map((d) => d[1]), 1), step = Math.pow(10, Math.floor(Math.log10(max))), top = Math.ceil(max / step) * step;
+    const pmax = Math.max(Math.ceil(Math.max(...data.map((d) => Math.max(d[2], d[3])), 10) / 10) * 10, 10);
+    const L = String(int(top)).length * 7 + 12, Rr = 38;
+    const svg = svgEl(W, H, 'Calls with connect and conversion rates: ' + data.map((d) => `${d[0]} ${d[1]} calls, ${d[2].toFixed(0)}% connect, ${d[3].toFixed(0)}% conversion`).join('; ')), mk = mkIn(svg);
+    const y = (v) => H - B - (v / top) * (H - B - T), yp = (v) => H - B - (v / pmax) * (H - B - T);
+    for (let i = 0; i <= 4; i++) {
+      mk('line', { x1: L, x2: W - Rr, y1: y((top / 4) * i), y2: y((top / 4) * i), stroke: css('--grid') });
+      mk('text', { x: L - 6, y: y((top / 4) * i) + 4, 'text-anchor': 'end' }).textContent = int(Math.round((top / 4) * i));
+      mk('text', { x: W - Rr + 6, y: yp((pmax / 4) * i) + 4 }).textContent = Math.round((pmax / 4) * i) + '%';
+    }
+    const bw = (W - L - Rr) / data.length, pad = Math.min(bw * 0.3, 18), every = Math.ceil(data.length / Math.max(Math.floor((W - L) / 56), 1));
+    const tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true;
+    const cx = (i) => L + i * bw + bw / 2;
+    data.forEach((d, i) => {
+      const w = Math.min(Math.max(bw - pad, 2), 64), x = cx(i) - w / 2;
+      const r = mk('rect', { x, y: y(d[1]), width: w, height: Math.max(y(0) - y(d[1]), d[1] ? 1 : 0), rx: 2, fill: css('--stone') });
+      r.addEventListener('pointermove', (ev) => { const b = el.getBoundingClientRect(); tip.textContent = `${d[0]}: ${int(d[1])} calls · ${d[2].toFixed(1)}% connect · ${d[3].toFixed(1)}% conversion`; tip.hidden = false;
+        tip.style.left = Math.max(Math.min(ev.clientX - b.left + 10, b.width - tip.offsetWidth - 4), 0) + 'px'; tip.style.top = Math.max(ev.clientY - b.top - 30, 0) + 'px'; });
+      r.addEventListener('pointerleave', () => { tip.hidden = true; });
+      if (i % every === 0) mk('text', { x: cx(i), y: H - 6, 'text-anchor': 'middle' }).textContent = d[0];
+    });
+    [[2, '--orange', ''], [3, '--s2', '5 4']].forEach(([k, c, dash]) => {
+      mk('path', { d: data.map((d, i) => (i ? 'L' : 'M') + cx(i) + ' ' + yp(d[k])).join(' '), fill: 'none', stroke: css(c), 'stroke-width': 2.5, 'stroke-dasharray': dash });
+      data.forEach((d, i) => mk('circle', { cx: cx(i), cy: yp(d[k]), r: 3.5, fill: css(c) }));
+    });
+    el.appendChild(svg); el.appendChild(tip);
+  }
+  function opsTrend() {
+    const m = new Map(), key = (d) => (opsGrain === 'day' ? d : opsGrain === 'week' ? weekStart(d) : d.slice(0, 7));
+    const G = (k) => { if (!m.has(k)) m.set(k, { calls: 0, called: new Set(), conn: new Set(), sales: 0 }); return m.get(k); };
+    D.calls.forEach((c) => { const g = G(key(dayOf(c[0]))); if (c[6]) { g.calls++; g.called.add(c[1]); } if (c[3] >= 90) g.conn.add(c[1]); });
+    D.orders.forEach((o) => { G(key(o[0])).sales++; });
+    const lab = (k) => (opsGrain === 'month' ? MON[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4) : (opsGrain === 'week' ? 'Wk of ' : '') + dlabel(k));
+    const pc = (a, b) => (b ? a / b * 100 : 0);
+    combo($('o-trend'), [...m.entries()].sort().map(([k, g]) => [lab(k), g.calls, pc(g.conn.size, g.called.size), pc(g.sales, g.conn.size)]));
+    const leg = $('o-tr-leg'); leg.replaceChildren();
+    [['Calls', '--stone', ''], ['Connect %', '--orange', 'ln'], ['Conversion %', '--s2', 'ln']].forEach(([t, c, cl]) => {
+      const s = document.createElement('span'), i = document.createElement('i'); i.className = cl; i.style.background = css(c); s.append(i, t); leg.appendChild(s); });
+  }
+
+  function donut(cats, total) {
+    const S = 96, r = 38, svg = svgEl(S, S, cats.map(([k, n]) => catName(k) + ' ' + n).join(', ')), mk = mkIn(svg);
+    let a = -Math.PI / 2;
+    if (cats.length === 1) mk('circle', { cx: S / 2, cy: S / 2, r, fill: 'none', stroke: catColor(cats[0][0]), 'stroke-width': 16 });
+    else cats.forEach(([k, n]) => { const b = a + (n / total) * 2 * Math.PI; mk('path', { d: arc(S / 2, S / 2, r, a, b - 0.0001), fill: 'none', stroke: catColor(k), 'stroke-width': 16 }); a = b; });
+    const t = mk('text', { x: S / 2, y: S / 2 + 5, 'text-anchor': 'middle', class: 'val' }); t.textContent = int(total); t.style.fontSize = '15px';
+    return svg;
+  }
+
+  const cell = (tr, v, n) => { const td = tr.insertCell(); td.textContent = v; if (n) td.className = 'n'; return td; };
+  function pickRows(tb, list, cols, isOn, onPick, empty) {
+    tb.replaceChildren();
+    if (!list.length) { const td = tb.insertRow().insertCell(); td.colSpan = cols; td.className = 'empty'; td.textContent = empty; return; }
+    list.forEach(([k, vals]) => {
+      const tr = tb.insertRow(); vals.forEach((v, i) => cell(tr, v, i > 0));
+      if (!onPick) return;
+      tr.className = 'pick' + (isOn(k) ? ' on' : ''); tr.tabIndex = 0;
+      tr.addEventListener('click', () => onPick(k)); tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onPick(k); } });
+    });
+  }
+
   function renderOps(f, e) {
     const o = ops(f, e), r1 = (a, b) => (b ? (a / b * 100).toFixed(1) + '%' : '—');
     setText('o-l-yes', int(o.yes)); setText('o-l-called', int(o.calledYes)); setText('o-l-med', dur(o.med)); setText('o-l-conn', int(o.conn));
     setText('o-yes', int(o.yes)); setText('o-called', int(o.calledYes)); setText('o-called-r', r1(o.calledYes, o.yes));
     setText('o-med', dur(o.med)); setText('o-15', r1(o.within15, o.yes));
     setText('o-conn', int(o.conn)); setText('o-conn-r', r1(o.conn, o.called)); setText('o-sales', int(o.sales)); setText('o-conv', r1(o.sales, o.conn));
+    gauge($('o-gauge'), o.gauge, o.hoopN);
+    hbars($('o-status'), STATUS.map(([s, c]) => [s, o.status.get(s) || 0, css(c)]), o.yes);
     const bl = ['≤ 5 min', '5–15 min', '15–30 min', '30–60 min', '1–2 h', '> 2 h', 'Not called yet'];
     bars($('o-resp'), bl.map((l, i) => [l, o.buckets[i]]), css('--s1'), 'YES leads');
+    opsTrend();
+
+    // outcomes drill-down: outcome -> disposition -> rep
     const cl = [...o.cats.entries()].sort((a, b) => b[1].calls - a[1].calls);
-    if (pickedCat == null || !o.cats.has(pickedCat)) pickedCat = cl.length ? cl[0][0] : null;
-    const tb = $('o-cats'); tb.replaceChildren();
-    if (!cl.length) { const td = tb.insertRow().insertCell(); td.colSpan = 4; td.className = 'empty'; td.textContent = 'No calls in this date range.'; }
-    cl.forEach(([k, x]) => {
-      const tr = tb.insertRow(); tr.className = 'pick' + (k === pickedCat ? ' on' : ''); tr.tabIndex = 0;
-      [D.cats[k], int(x.calls), int(x.ppl.size), r1(x.calls, o.calls)].forEach((v, i) => { const td = tr.insertCell(); td.textContent = v; if (i) td.className = 'n'; });
-      const pick = () => { pickedCat = k; renderOps(f, e); };
-      tr.addEventListener('click', pick); tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); pick(); } });
-    });
+    catRank = new Map(cl.map(([k], i) => [k, i]));
+    if (pickedCat == null || !o.cats.has(pickedCat)) { pickedCat = cl.length ? cl[0][0] : null; pickedDisp = null; }
+    const again = () => renderOps(f, e);
+    pickRows($('o-cats'), cl.map(([k, x]) => [k, [D.cats[k], int(x.calls), int(x.ppl.size), r1(x.calls, o.calls)]]), 4,
+      (k) => k === pickedCat, (k) => { pickedCat = k; pickedDisp = null; again(); }, 'No calls in this date range.');
+    const dmap = pickedCat == null ? new Map() : o.cats.get(pickedCat).d;
+    const dl = [...dmap.entries()].sort((a, b) => b[1].calls - a[1].calls);
+    if (pickedDisp == null || !dmap.has(pickedDisp)) pickedDisp = dl.length ? dl[0][0] : null;
     setText('o-drill-h', pickedCat == null ? 'Dispositions' : 'Dispositions in ' + D.cats[pickedCat]);
-    const db = $('o-drill'); db.replaceChildren();
-    const dl = pickedCat == null ? [] : [...o.cats.get(pickedCat).d.entries()].sort((a, b) => b[1].calls - a[1].calls);
-    if (!dl.length) { const td = db.insertRow().insertCell(); td.colSpan = 3; td.className = 'empty'; td.textContent = 'Pick an outcome.'; }
-    dl.forEach(([k, y]) => { const tr = db.insertRow(); [D.disps[k], int(y.calls), int(y.ppl.size)].forEach((v, i) => { const td = tr.insertCell(); td.textContent = v; if (i) td.className = 'n'; }); });
-    const rl = [...o.reps.entries()].map(([k, r]) => [D.reps[k], r.ppl.size, r.calls, r.conn.size, r1(r.conn.size, r.ppl.size), dur(median(o.repResp.get(k) || [])), r.sales, r.up, r1(r.sales, r.conn.size)])
-      .sort((a, b) => b[7] - a[7] || b[3] - a[3] || b[1] - a[1]);
-    rows($('o-reps'), rl, [null, int, int, int, null, null, int, money, null], 'No rep activity in this date range.');
-    $('o-reps').querySelectorAll('tr').forEach((tr) => { [4, 5, 8].forEach((i) => { if (tr.cells[i]) tr.cells[i].className = 'n'; }); });
+    pickRows($('o-drill'), dl.map(([k, y]) => [k, [D.disps[k], int(y.calls), int(y.ppl.size)]]), 3,
+      (k) => k === pickedDisp, (k) => { pickedDisp = k; again(); }, 'Pick an outcome.');
+    setText('o-drill2-h', pickedDisp == null ? 'Reps' : 'Reps on ' + D.disps[pickedDisp]);
+    const rl2 = pickedDisp == null ? [] : [...dmap.get(pickedDisp).r.entries()].sort((a, b) => b[1].calls - a[1].calls);
+    pickRows($('o-drill2'), rl2.map(([k, z]) => [k, [k >= 0 ? D.reps[k] : '(no rep)', int(z.calls), int(z.ppl.size)]]), 3, null, null, 'Pick a disposition.');
+
+    // rep table: sortable, with a TOTAL row
+    const pr = (a, b) => (b ? a / b * 100 : null);
+    const rl = [...o.reps.entries()].map(([k, r]) => [D.reps[k], r.ppl.size, r.calls, r.conn.size, pr(r.conn.size, r.ppl.size), avg(o.repResp.get(k) || []), r.sales, r.up, pr(r.sales, r.conn.size)]);
+    const [sk, sd] = repSort;
+    rl.sort((a, b) => { const x = a[sk], y = b[sk]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * sd || b[7] - a[7]; });
+    const fm = [null, int, int, int, (v) => (v == null ? '—' : v.toFixed(1) + '%'), dur, int, money, (v) => (v == null ? '—' : v.toFixed(1) + '%')];
+    const tb = $('o-reps'); tb.replaceChildren();
+    if (!rl.length) { const td = tb.insertRow().insertCell(); td.colSpan = 9; td.className = 'empty'; td.textContent = 'No rep activity in this date range.'; }
+    rl.forEach((r) => { const tr = tb.insertRow(); r.forEach((v, i) => cell(tr, fm[i] ? fm[i](v) : v, i > 0)); });
+    const tf = $('o-reps-tot'); tf.replaceChildren();
+    if (rl.length) {
+      const allResp = [].concat(...o.repResp.values()), sum = (i) => rl.reduce((a, r) => a + r[i], 0);
+      const tot = ['TOTAL', o.called, o.outCalls, o.conn, pr(o.conn, o.called), avg(allResp), o.sales, o.revenue, pr(o.sales, o.conn)];
+      const tr = tf.insertRow(); tot.forEach((v, i) => cell(tr, fm[i] ? fm[i](v) : v, i > 0));
+      void sum;
+    }
+    $('o-rep-t').querySelectorAll('th').forEach((th) => th.setAttribute('aria-sort', +th.dataset.k === sk ? (sd > 0 ? 'ascending' : 'descending') : 'none'));
+
+    // outcome donut per rep
+    const box = $('o-donuts'); box.replaceChildren();
+    const rd = [...o.reps.entries()].filter(([, r]) => r.calls).sort((a, b) => b[1].calls - a[1].calls);
+    const used = new Set();
+    rd.forEach(([k, r]) => {
+      const fm2 = new Map(); r.cats.forEach((n, c) => { const f2 = fold(c); fm2.set(f2, (fm2.get(f2) || 0) + n); });
+      const rank = (c) => (c === OTHER ? 99 : catRank.get(c));
+      const cs = [...fm2.entries()].sort((a, b) => rank(a[0]) - rank(b[0])); cs.forEach(([c]) => used.add(c));
+      const card = document.createElement('div'); card.className = 'card donut';
+      const h = document.createElement('h3'); h.textContent = D.reps[k]; h.title = D.reps[k];
+      const ul = document.createElement('ul');
+      [...fm2.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).forEach(([c, n]) => {
+        const li = document.createElement('li'), i = document.createElement('i'), sp = document.createElement('span'), b = document.createElement('b');
+        i.style.background = catColor(c); sp.textContent = catName(c); sp.title = catName(c); b.textContent = (n / r.calls * 100).toFixed(0) + '%'; li.append(i, sp, b); ul.appendChild(li);
+      });
+      card.append(h, donut(cs, r.calls), ul); box.appendChild(card);
+    });
+    if (!rd.length) { const p = document.createElement('div'); p.className = 'empty'; p.textContent = 'No rep calls in this date range.'; box.appendChild(p); }
+    const leg = $('o-donut-leg'); leg.replaceChildren();
+    [...used].sort((a, b) => (a === OTHER ? 99 : catRank.get(a)) - (b === OTHER ? 99 : catRank.get(b))).forEach((c) => { const s = document.createElement('span'), i = document.createElement('i'); i.style.background = catColor(c); s.append(i, catName(c)); leg.appendChild(s); });
   }
+  $('o-rep-t').querySelectorAll('th').forEach((th) => {
+    th.tabIndex = 0;
+    const go = () => { const k = +th.dataset.k; repSort = [k, repSort[0] === k ? -repSort[1] : (k === 0 ? 1 : -1)]; render(); };
+    th.addEventListener('click', go); th.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } });
+  });
+  document.querySelectorAll('#o-seg button').forEach((b) => b.addEventListener('click', () => {
+    opsGrain = b.dataset.g; document.querySelectorAll('#o-seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); opsTrend();
+  }));
 
   function render() {
     $('custom').hidden = sel.value !== 'custom';
@@ -492,8 +722,8 @@
     renderOps(f, e);
   }
 
-  document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
-    grain = b.dataset.g; document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); trend();
+  document.querySelectorAll('.seg:not(#o-seg) button').forEach((b) => b.addEventListener('click', () => {
+    grain = b.dataset.g; document.querySelectorAll('.seg:not(#o-seg) button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); trend();
   }));
   function showView(v) {
     document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.view === v)));
