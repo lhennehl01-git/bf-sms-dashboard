@@ -106,14 +106,16 @@ for f in sms_files:
         k = r.get('Communication ID') or (r['Started At'] + r['Contact Number'] + r['Direction'])
         if k in seen or r.get('Line Name') != LINE or r['Started At'][:10] < START: continue
         seen.add(k); sms.append(r)
-seen, calls, call_asof = set(), [], ''
+seen, calls, call_asof, any_out = set(), [], '', []
 for f in call_files:
     for r in rd(f):
         r['Started At'] = ts(r['Started At'])
         call_asof = max(call_asof, r['Started At'])        # newest call of any line = how fresh the export is
         k = r.get('Communication ID') or (r['Started At'] + r['Contact Number'])
-        if k in seen or r.get('Line Name') != LINE or r['Started At'][:10] < START: continue
-        seen.add(k); calls.append(r)
+        if k in seen or r['Started At'][:10] < START: continue
+        seen.add(k)
+        if r['Direction'] == 'outbound': any_out.append((r['Started At'], r['Contact Number']))   # every line, for "Called"
+        if r.get('Line Name') == LINE: calls.append(r)
 
 orders = collections.OrderedDict()
 for r in (rd(SALES_CSV) if os.path.exists(SALES_CSV) else []):
@@ -204,6 +206,14 @@ for r in sms:
         k = (i, r['Started At'][:10])   # first YES per person per day, so a repeat YES on a new day counts that day too
         if t is not None and (k not in yes_first or t < yes_first[k]): yes_first[k] = t
 yes_rows = sorted([[t, i] for (i, _), t in yes_first.items()])
+yes_ids = {i for (i, _) in yes_first}
+yes_calls = collections.defaultdict(list)   # YES lead -> outbound call times on ANY line (minutes), used for "Called"
+for st, num in any_out:
+    p = p10(num)
+    if p and p in idx and idx[p] in yes_ids:
+        t = tmin(st)
+        if t is not None: yes_calls[idx[p]].append(t)
+yes_calls = {i: sorted(v) for i, v in yes_calls.items()}
 for o in orders: o['rep_i'] = rid(o['rep'])
 
 
@@ -252,7 +262,7 @@ asof = max([r['Started At'] for r in sms] + [''])
 sales_asof = json.load(open(SALES_META))['pulled_at'] if os.path.exists(SALES_META) else ''
 core = {'updated': {'sms': asof, 'calls': call_asof}, 'days': days, 'orders': order_rows, 'pg': pg,
         'groups': G['groups'], 'gsize': [G['size'].get(g, 0) for g in G['groups']],
-        'calls': call_rows, 'yesFirst': yes_rows, 'reps': reps, 'repMeta': rep_meta, 'cats': cats, 'disps': disps, 'start': START}
+        'calls': call_rows, 'yesFirst': yes_rows, 'yesCalls': yes_calls, 'reps': reps, 'repMeta': rep_meta, 'cats': cats, 'disps': disps, 'start': START}
 data = dict(core, asof=asof, built=now_et().strftime('%Y-%m-%d %H:%M'))
 data['updated'] = dict(core['updated'], sales=sales_asof)
 built_at = now_et().strftime('%Y-%m-%d %H:%M:%S')   # sheets are read fresh on every build
