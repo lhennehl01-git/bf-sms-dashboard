@@ -201,8 +201,9 @@ yes_first = {}
 for r in sms:
     if r['Direction'] == 'inbound' and YES in (r.get('Tags') or '') and p10(r['Contact Number']):
         i, t = pid(p10(r['Contact Number'])), tmin(r['Started At'])
-        if t is not None and (i not in yes_first or t < yes_first[i]): yes_first[i] = t
-yes_rows = sorted([[t, i] for i, t in yes_first.items()])
+        k = (i, r['Started At'][:10])   # first YES per person per day, so a repeat YES on a new day counts that day too
+        if t is not None and (k not in yes_first or t < yes_first[k]): yes_first[k] = t
+yes_rows = sorted([[t, i] for (i, _), t in yes_first.items()])
 for o in orders: o['rep_i'] = rid(o['rep'])
 
 

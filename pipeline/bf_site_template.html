@@ -355,7 +355,7 @@
 
     <section>
       <h2>Outcomes by rep</h2>
-      <p>Share of each rep's calls by outcome in this date range. The middle shows their call count.</p>
+      <p>Each rep's calls by outcome in this date range: number of calls and share of their calls. The middle shows their call count.</p>
       <div class="legend" id="o-donut-leg"></div>
       <div class="donuts" id="o-donuts"></div>
     </section>
@@ -609,7 +609,7 @@
 
   function ops(f, e) {
     const inR = (t) => { const d = dayOf(t); return d >= f && d <= e; };
-    const C = D.calls.filter((c) => inR(c[0]) && okRep(c[2])), Y = D.yesFirst.filter((y) => inR(y[0]) && yesOK(y));
+    const C = D.calls.filter((c) => inR(c[0]) && okRep(c[2])), Y = (() => { const s = new Set(); return D.yesFirst.filter((y) => inR(y[0]) && yesOK(y) && !s.has(y[1]) && s.add(y[1])); })();   // each person once: first YES in the range (same people as the Executive tab)
     const resp = [], hoopResp = [], buckets = [0, 0, 0, 0, 0, 0, 0], repResp = new Map(), status = new Map();
     Y.forEach(([t, i]) => {
       const [st, m, o] = statusOf(t, i);
@@ -815,7 +815,7 @@
       const ul = document.createElement('ul');
       [...fm2.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).forEach(([c, n]) => {
         const li = document.createElement('li'), i = document.createElement('i'), sp = document.createElement('span'), b = document.createElement('b');
-        i.style.background = catColor(c); sp.textContent = catName(c); sp.title = catName(c); b.textContent = (n / r.calls * 100).toFixed(0) + '%'; li.append(i, sp, b); ul.appendChild(li);
+        i.style.background = catColor(c); sp.textContent = catName(c); sp.title = catName(c); b.textContent = int(n) + ' · ' + (n / r.calls * 100).toFixed(0) + '%'; li.append(i, sp, b); ul.appendChild(li);
       });
       card.append(h, donut(cs, r.calls), ul); box.appendChild(card);
     });
