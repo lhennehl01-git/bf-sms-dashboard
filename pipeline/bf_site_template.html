@@ -103,22 +103,39 @@
   .pill { display: inline-block; font: 600 10px/1 var(--mono); background: var(--sand); color: var(--fg); border-radius: 10px; padding: 3px 7px; margin-left: 4px; letter-spacing: 0; }
   .pill:empty { display: none; }
   @media (prefers-color-scheme: dark) { .pill { background: var(--grid); } }
-  .filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
-  .filters .f { display: grid; gap: 4px; }
-  .filters .k { margin: 0; }
+  #o-rep-t td:nth-child(-n+2), #o-team-t td:first-child { white-space: nowrap; }
+  .stick { position: sticky; top: 0; z-index: 30; background: var(--bg); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+    margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))); padding: 0 max(16px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--line); transition: box-shadow .15s; }
+  .stick.stuck { box-shadow: 0 6px 16px -10px rgba(0,0,0,.25); }
+  .stick .tabs { border-bottom: 0; }
+  .stick-r { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 0; }
+  .srange { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .filters[hidden] { display: none; }
   .msel { position: relative; }
-  .msel-b { font: inherit; font-size: 14px; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; min-width: 170px; max-width: 240px; text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .msel-b { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 12px; max-width: 220px; cursor: pointer; white-space: nowrap; }
+  .msel-b .ml { font: 600 10px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .msel-b .mv { overflow: hidden; text-overflow: ellipsis; }
+  .msel-b .ca { color: var(--muted); font-size: 10px; }
+  .msel-b:hover { border-color: var(--stone); }
+  .msel-b.on { border-color: var(--orange); background: rgba(253, 51, 0, .07); }
+  .msel-b.on .mv { color: var(--orange-dk); font-weight: 600; }
+  @media (prefers-color-scheme: dark) { .msel-b.on { background: rgba(253, 51, 0, .16); } .msel-b.on .mv { color: #FF7A52; } }
   .msel-b:focus-visible, .reset:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
-  .msel-p { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; width: 260px; max-width: calc(100vw - 32px); background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.14); padding: 8px; }
+  .msel-p { position: absolute; z-index: 40; top: calc(100% + 6px); right: 0; width: 260px; max-width: calc(100vw - 32px); background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 28px rgba(0,0,0,.16); padding: 8px; }
+  .msel:first-child .msel-p { right: auto; left: 0; }
   .msel-p input[type=search] { width: 100%; font: inherit; font-size: 13px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; }
-  .msel-l { max-height: 260px; overflow: auto; display: grid; gap: 2px; font-size: 13px; }
-  .msel-l label { display: flex; gap: 6px; align-items: center; padding: 4px 6px; border-radius: 4px; cursor: pointer; }
+  .msel-l { max-height: 280px; overflow: auto; display: grid; gap: 1px; font-size: 13px; }
+  .msel-l label { display: flex; gap: 8px; align-items: center; padding: 5px 6px; border-radius: 4px; cursor: pointer; }
   .msel-l label:hover { background: var(--sand); }
   .msel-l input { accent-color: var(--orange); margin: 0; }
   @media (prefers-color-scheme: dark) { .msel-l label:hover { background: var(--grid); } }
-  .reset { font: inherit; font-size: 13px; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
-  .reset:hover { color: var(--fg); }
-  .flabel { flex-basis: 100%; font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .reset { font: inherit; font-size: 12px; background: none; border: 0; color: var(--orange-dk); text-decoration: underline; text-underline-offset: 3px; padding: 4px 6px; cursor: pointer; }
+  .reset[hidden] { display: none; }
+  .fnote { margin: -16px 0 0; font-size: 12px; color: var(--muted); }
+  .fnote[hidden] { display: none; }
+  @media (max-width: 640px) { .stick-r { width: 100%; justify-content: space-between; } .msel-b { max-width: 150px; } }
   .tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font: 12px var(--mono); box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
   .seg button { font: inherit; font-size: 12px; padding: 6px 14px; background: var(--card); color: var(--fg); border: 0; cursor: pointer; }
@@ -174,10 +191,20 @@
     </div>
   </header>
 
-  <nav class="tabs" role="tablist" aria-label="Views">
-    <button type="button" role="tab" id="tab-exec" data-view="exec" aria-selected="true">Executive</button>
-    <button type="button" role="tab" id="tab-ops" data-view="ops" aria-selected="false">Call Performance</button>
-  </nav>
+  <div class="stick" id="stick">
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button type="button" role="tab" id="tab-exec" data-view="exec" aria-selected="true">Executive</button>
+      <button type="button" role="tab" id="tab-ops" data-view="ops" aria-selected="false">Call Performance</button>
+    </nav>
+    <div class="stick-r">
+      <div class="filters" id="o-filters" hidden role="group" aria-label="Filters">
+        <div class="msel" id="f-user"></div><div class="msel" id="f-lob"></div><div class="msel" id="f-team"></div>
+        <button type="button" class="reset" id="f-reset" hidden title="Clear all filters">Clear</button>
+      </div>
+      <span class="srange" id="s-range"></span>
+    </div>
+  </div>
+  <p class="fnote" id="f-label" hidden></p>
 
   <div id="view-exec" class="view">
 
@@ -250,13 +277,6 @@
   </div>
 
   <div id="view-ops" class="view" hidden>
-    <div class="filters" id="o-filters">
-      <div class="f"><span class="k">User</span><div class="msel" id="f-user"></div></div>
-      <div class="f"><span class="k">LOB</span><div class="msel" id="f-lob"></div></div>
-      <div class="f"><span class="k">Team</span><div class="msel" id="f-team"></div></div>
-      <button type="button" class="reset" id="f-reset">Reset filters</button>
-      <span class="flabel" id="f-label"></span>
-    </div>
     <p class="lede">Of <b id="o-l-yes">—</b> YES leads, reps called <b id="o-l-called">—</b>. The typical wait from their YES to the first call was <b id="o-l-med">—</b>, and <b id="o-l-conn">—</b> connected for 90 seconds or more.</p>
     <div class="tiles">
       <div class="card tile-accent"><p class="k">YES leads</p><div class="big" id="o-yes">—</div><div class="note">said YES in this date range</div></div>
@@ -321,7 +341,7 @@
       <h2>Rep performance</h2>
       <p>Per rep in this date range. Click a column to sort. Calls = outbound calls. Connect rate = people connected 90 sec+ ÷ people called. Conversion = orders; conversion rate = orders ÷ people connected.</p>
       <div class="card tw"><table class="sortable" id="o-rep-t">
-        <thead><tr><th data-k="0">Rep</th><th class="n" data-k="1">Calls</th><th class="n" data-k="2">Connected</th><th class="n" data-k="3">Connect rate</th><th class="n" data-k="4">Conversion</th><th class="n" data-k="5">Conversion rate</th><th class="n" data-k="6">Clubs</th><th class="n" data-k="7">PG1 upfront</th><th class="n" data-k="8">PG1 trial</th><th class="n" data-k="9">BFCM bundles</th><th class="n" data-k="10">Upfront rev</th></tr></thead>
+        <thead><tr><th data-k="0">Rep</th><th data-k="1">Team</th><th class="n" data-k="2">Calls</th><th class="n" data-k="3">Connected</th><th class="n" data-k="4">Connect rate</th><th class="n" data-k="5">Conversion</th><th class="n" data-k="6">Conversion rate</th><th class="n" data-k="7">Clubs</th><th class="n" data-k="8">PG1 upfront</th><th class="n" data-k="9">PG1 trial</th><th class="n" data-k="10">BFCM bundles</th><th class="n" data-k="11">Upfront rev</th></tr></thead>
         <tbody id="o-reps"></tbody>
         <tfoot id="o-reps-tot"></tfoot>
       </table></div>
@@ -528,7 +548,8 @@
     allowed = on ? new Set(D.reps.map((_, k) => k).filter((k) => (!FS.user || FS.user.has(D.reps[k])) && (!FS.team || FS.team.has(META[k][0])) && (!FS.lob || FS.lob.has(META[k][1])))) : null;
     const parts = [FS.user ? (FS.user.size === 1 ? [...FS.user][0] : FS.user.size + ' users') : 'All users',
       FS.lob ? (FS.lob.size === 1 ? [...FS.lob][0] : FS.lob.size + ' LOBs') : 'All LOBs', FS.team ? (FS.team.size === 1 ? [...FS.team][0] : FS.team.size + ' teams') : 'All teams'];
-    setText('f-label', parts.join(' · ') + (on ? ' · YES leads count when a selected rep made the first call' : ''));
+    setText('f-label', 'Filtered to ' + parts.join(' · ') + '. YES leads count when a selected rep made the first call.');
+    $('f-label').hidden = !on || $('view-ops').hidden; $('f-reset').hidden = !on;
   }
   const okRep = (k) => allowed == null || (k >= 0 && allowed.has(k));
   const yesOK = ([t, i]) => { if (allowed == null) return true; const fo = (outT.get(i) || []).find((x) => x >= t); return fo != null && okRep(callRep.get(i + '|' + fo)); };
@@ -539,7 +560,11 @@
     const q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search ' + plural + '…'; q.setAttribute('aria-label', 'Search ' + plural);
     const list = document.createElement('div'); list.className = 'msel-l';
     pop.append(q, list); el.append(btn, pop);
-    const label = () => { const v = FS[key]; btn.textContent = (v == null ? 'All ' + plural : v.size === 1 ? [...v][0] : v.size + ' ' + plural) + ' ▾'; };
+    const label = () => { const v = FS[key]; btn.replaceChildren();
+      const l = document.createElement('span'); l.className = 'ml'; l.textContent = noun;
+      const m = document.createElement('span'); m.className = 'mv'; m.textContent = v == null ? 'All' : v.size === 1 ? [...v][0] : v.size + ' ' + plural;
+      const c = document.createElement('span'); c.className = 'ca'; c.textContent = '▾'; c.setAttribute('aria-hidden', 'true');
+      btn.append(l, m, c); btn.classList.toggle('on', v != null); btn.title = noun + ': ' + (v == null ? 'All' : [...v].join(', ')); };
     const cur = () => FS[key] || new Set(values);
     const commit = (set) => { FS[key] = set.size === values.length ? null : set; label(); recompute(); render(); draw(); };
     function row(text, checked, onToggle, strong) {
@@ -559,13 +584,13 @@
   document.addEventListener('click', () => document.querySelectorAll('.msel-p').forEach((p) => { p.hidden = true; }));
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') document.querySelectorAll('.msel-p').forEach((p) => { p.hidden = true; }); });
   const uniq = (a) => [...new Set(a)].sort((x, y) => x.localeCompare(y));
-  msel($('f-user'), 'user', 'users', uniq(D.reps), 'user');
+  msel($('f-user'), 'User', 'users', uniq(D.reps), 'user');
   msel($('f-lob'), 'LOB', 'LOBs', uniq(META.map((m) => m[1])), 'lob');
-  msel($('f-team'), 'team', 'teams', uniq(META.map((m) => m[0])), 'team');
+  msel($('f-team'), 'Team', 'teams', uniq(META.map((m) => m[0])), 'team');
   $('f-reset').addEventListener('click', () => { ['f-user', 'f-lob', 'f-team'].forEach((id) => $(id)._reset()); recompute(); render(); });
   recompute();
 
-  let pickedCat = null, pickedDisp = null, opsGrain = 'day', repSort = [10, -1], teamSort = [11, -1];
+  let pickedCat = null, pickedDisp = null, opsGrain = 'day', repSort = [11, -1], teamSort = [11, -1];
 
   function statusOf(t, i) {
     const o = (outT.get(i) || []).find((x) => x >= t), n = (incT.get(i) || []).find((x) => x >= t);
@@ -730,19 +755,19 @@
 
     // rep table: sortable, with a TOTAL row
     const pr = (a, b) => (b ? a / b * 100 : null);
-    const rl = [...o.reps.entries()].map(([k, r]) => [D.reps[k], r.calls, r.conn.size, pr(r.conn.size, r.ppl.size), r.sales, pr(r.sales, r.conn.size), r.k.club, r.k.pg1, r.k.trial, r.k.bfcm, r.up]);
+    const rl = [...o.reps.entries()].map(([k, r]) => [D.reps[k], (META[k] || ['Unmatched'])[0], r.calls, r.conn.size, pr(r.conn.size, r.ppl.size), r.sales, pr(r.sales, r.conn.size), r.k.club, r.k.pg1, r.k.trial, r.k.bfcm, r.up]);
     const [sk, sd] = repSort;
     rl.sort((a, b) => { const x = a[sk], y = b[sk]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
-      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * sd || b[10] - a[10] || b[2] - a[2]; });
+      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * sd || b[11] - a[11] || b[3] - a[3]; });
     const pf = (v) => (v == null ? '—' : v.toFixed(1) + '%');
-    const fm = [null, int, int, pf, int, pf, int, int, int, int, money];
+    const fm = [null, null, int, int, pf, int, pf, int, int, int, int, money];
     const tb = $('o-reps'); tb.replaceChildren();
-    if (!rl.length) { const td = tb.insertRow().insertCell(); td.colSpan = 11; td.className = 'empty'; td.textContent = 'No rep activity in this date range.'; }
-    rl.forEach((r) => { const tr = tb.insertRow(); r.forEach((v, i) => cell(tr, fm[i] ? fm[i](v) : v, i > 0)); });
+    if (!rl.length) { const td = tb.insertRow().insertCell(); td.colSpan = 12; td.className = 'empty'; td.textContent = 'No rep activity in this date range.'; }
+    rl.forEach((r) => { const tr = tb.insertRow(); r.forEach((v, i) => cell(tr, fm[i] ? fm[i](v) : v, i > 1)); });
     const tf = $('o-reps-tot'); tf.replaceChildren();
     if (rl.length) {
-      const tot = ['TOTAL', o.outCalls, o.conn, pr(o.conn, o.called), o.sales, pr(o.sales, o.conn), o.kt.club, o.kt.pg1, o.kt.trial, o.kt.bfcm, o.revenue];
-      const tr = tf.insertRow(); tot.forEach((v, i) => cell(tr, fm[i] ? fm[i](v) : v, i > 0));
+      const tot = ['TOTAL', '', o.outCalls, o.conn, pr(o.conn, o.called), o.sales, pr(o.sales, o.conn), o.kt.club, o.kt.pg1, o.kt.trial, o.kt.bfcm, o.revenue];
+      const tr = tf.insertRow(); tot.forEach((v, i) => cell(tr, fm[i] ? fm[i](v) : v, i > 1));
     }
     $('o-rep-t').querySelectorAll('th').forEach((th) => th.setAttribute('aria-sort', +th.dataset.k === sk ? (sd > 0 ? 'ascending' : 'descending') : 'none'));
 
@@ -797,7 +822,7 @@
   });
   $('o-rep-t').querySelectorAll('th').forEach((th) => {
     th.tabIndex = 0;
-    const go = () => { const k = +th.dataset.k; repSort = [k, repSort[0] === k ? -repSort[1] : (k === 0 ? 1 : -1)]; render(); };
+    const go = () => { const k = +th.dataset.k; repSort = [k, repSort[0] === k ? -repSort[1] : (k <= 1 ? 1 : -1)]; render(); };
     th.addEventListener('click', go); th.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } });
   });
   document.querySelectorAll('#o-seg button').forEach((b) => b.addEventListener('click', () => {
@@ -922,7 +947,7 @@
     $('custom').hidden = sel.value !== 'custom';
     const [f, e] = range(), m = compute(f, e);
     const rl = f === e ? dlabel(f) + ', ' + f.slice(0, 4) : dlabel(f) + ' – ' + dlabel(e) + ', ' + e.slice(0, 4);
-    setText('rlabel', rl);
+    setText('rlabel', rl); setText('s-range', rl);
     if (sel.value === 'custom' && document.activeElement !== fromEl && document.activeElement !== toEl) { fromEl.value = f; toEl.value = e; }
     setText('l-yes', int(m.yes)); setText('l-del', int(m.delivered)); setText('l-conn', int(m.connected)); setText('l-conv', int(m.converted)); setText('l-rev', money(m.revenue));
     setText('t-sent', int(m.sent)); setText('t-dr', pct(m.delivered_rate)); setText('t-rep', int(m.replied)); setText('t-rr', pct(m.reply_rate));
@@ -945,7 +970,7 @@
   }));
   function showView(v) {
     document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.view === v)));
-    $('view-exec').hidden = v !== 'exec'; $('view-ops').hidden = v !== 'ops';
+    $('view-exec').hidden = v !== 'exec'; $('view-ops').hidden = v !== 'ops'; $('o-filters').hidden = v !== 'ops'; recompute();
     try { if (location.hash !== (v === 'ops' ? '#ops' : '')) history.replaceState(null, '', v === 'ops' ? '#ops' : location.pathname + location.search); } catch (err) { /* some viewers block it */ }
     render();
   }
@@ -956,6 +981,8 @@
     render();
   });
   [fromEl, toEl].forEach((el) => el.addEventListener('change', () => { if (el.validity.valid) render(); }));
+  const stick = $('stick'); const onScroll = () => stick.classList.toggle('stuck', stick.getBoundingClientRect().top <= 0 && scrollY > 0);
+  window.addEventListener('scroll', onScroll, { passive: true });
   let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
   const when = (t) => { if (!t) return '—'; const d = new Date(t.replace(' ', 'T')); return dlabel(t.slice(0, 10)) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' ET'; };
