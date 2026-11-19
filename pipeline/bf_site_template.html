@@ -370,6 +370,7 @@
         <tr><td>Replies</td><td>People who texted back on that line, counted once each in the date range.</td></tr>
         <tr><td>YES</td><td>People whose reply carries Aloware's Black Friday YES tag. A support question can land here.</td></tr>
         <tr><td>YES replies (charts)</td><td>Trend and by-hour charts count YES texts, so one person can count more than once.</td></tr>
+        <tr><td>Called</td><td>YES leads with at least one outbound call on the Black Friday line (same number as "YES leads called" in the Slack update).</td></tr>
         <tr><td>Connected</td><td>People with at least one call of 90 seconds or more on the Black Friday line.</td></tr>
         <tr><td>Converted</td><td>Orders in the call tracker with Call Type "SMS blast", one per rep and customer per day.</td></tr>
         <tr><td>What sold</td><td>BFCM bundles counted on their own. Products with "Trial" in the name are trials, not paid PG1.</td></tr>
@@ -441,7 +442,8 @@
     const ds = DAYS.filter((d) => d >= f && d <= e);
     const U = (k) => { const s = new Set(); ds.forEach((d) => D.days[d][k].forEach((i) => s.add(i))); return s; };
     const sent = ds.reduce((a, d) => a + D.days[d].sent, 0), failed = ds.reduce((a, d) => a + D.days[d].failed, 0);
-    const texted = U('texted'), rep = U('replied'), yes = U('yes'), called = U('called'), conn = U('conn');
+    const texted = U('texted'), rep = U('replied'), yes = U('yes'), conn = U('conn');
+    const called = new Set([...U('called')].filter((i) => yes.has(i)));   // YES leads with a call (same as the Slack update)
     const O = D.orders.filter((o) => o[0] >= f && o[0] <= e);
     const k = { club: 0, pg1: 0, bfcm: 0, trial: 0 };
     O.forEach((o) => o[2].forEach((it) => { if (it[1] in k) k[it[1]]++; }));
