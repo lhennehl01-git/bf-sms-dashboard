@@ -254,11 +254,14 @@ core = {'updated': {'sms': asof, 'calls': call_asof}, 'days': days, 'orders': or
         'calls': call_rows, 'yesFirst': yes_rows, 'reps': reps, 'repMeta': rep_meta, 'cats': cats, 'disps': disps, 'start': START}
 data = dict(core, asof=asof, built=now_et().strftime('%Y-%m-%d %H:%M'))
 data['updated'] = dict(core['updated'], sales=sales_asof)
+built_at = now_et().strftime('%Y-%m-%d %H:%M:%S')   # sheets are read fresh on every build
 data['sourceList'] = [
     ['SMS (texts and replies)', 'Aloware export in Drive › Phone Team Reports › Black Friday SMS', ', '.join(display_name(f) for f in sms_files), asof],
     ['Calls', 'Aloware export in Drive › Phone Team Reports › Aloware Call Logs - BF2', ', '.join(display_name(f) for f in call_files), call_asof],
     ['Sales', 'Google Sheet "Call Tracking - PG Phone Support", tab Call Tracking (Call Type "SMS blast")', 'Call Tracking', sales_asof],
-    ['Groups', 'Upload lists we sent (Cohorts)', ', '.join(G.get('files', [])), '']]
+    ['Groups', 'Upload lists we sent (Cohorts)', ', '.join(G.get('files', [])), ''],
+    ['Outcomes and connects', 'Google Sheet "Call Disposition Category (main source)", tabs Call Disposition_BF2 / _BF1 (Disposition Category, Connects)', 'Call Disposition_BF2', built_at],
+    ['Team and LOB', 'Google Sheet "2026Schedule_Aloware Name" (phone team roster), tab Schedule, same as the Phone Team Calls dashboard', 'Schedule', built_at]]
 
 # publish only when the numbers changed, or the live page is over an hour old (keeps the "updated as of" times true)
 out = os.path.join(REPO, 'index.html')
