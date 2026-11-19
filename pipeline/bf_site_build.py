@@ -66,9 +66,12 @@ def load_dispositions():
             ci = h.index('disposition category') if 'disposition category' in h else 1
             si = next((i for i, x in enumerate(h) if x.startswith('suggested category')), None)   # used until column B is filled
             ki = next((i for i, x in enumerate(h) if x.startswith('connects')), None)               # "Connects Based on Call Disposition"
+            gi = next((i for i, x in enumerate(h) if x.startswith('suggested connects')), None)     # used until column C is filled
             for r in v[1:]:
-                if ki is not None and len(r) > ki and r[0].strip() and r[0].strip() not in CONN and r[ki].strip() in ('0', '1'):
-                    CONN[r[0].strip()] = int(r[ki])
+                if not r or not r[0].strip() or r[0].strip() in CONN: continue
+                cv = r[ki].strip() if ki is not None and len(r) > ki else ''
+                if cv not in ('0', '1') and gi is not None and len(r) > gi: cv = r[gi].strip()
+                if cv in ('0', '1'): CONN[r[0].strip()] = int(cv)
             for r in v[1:]:
                 if len(r) <= max(di, ci) or not r[di].strip() or r[di].strip() in m: continue
                 c = r[ci].strip() or (r[si].strip() if si is not None and len(r) > si else '')
