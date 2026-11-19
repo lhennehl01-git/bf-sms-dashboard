@@ -103,6 +103,22 @@
   .pill { display: inline-block; font: 600 10px/1 var(--mono); background: var(--sand); color: var(--fg); border-radius: 10px; padding: 3px 7px; margin-left: 4px; letter-spacing: 0; }
   .pill:empty { display: none; }
   @media (prefers-color-scheme: dark) { .pill { background: var(--grid); } }
+  .filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+  .filters .f { display: grid; gap: 4px; }
+  .filters .k { margin: 0; }
+  .msel { position: relative; }
+  .msel-b { font: inherit; font-size: 14px; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; min-width: 170px; max-width: 240px; text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .msel-b:focus-visible, .reset:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .msel-p { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; width: 260px; max-width: calc(100vw - 32px); background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.14); padding: 8px; }
+  .msel-p input[type=search] { width: 100%; font: inherit; font-size: 13px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; }
+  .msel-l { max-height: 260px; overflow: auto; display: grid; gap: 2px; font-size: 13px; }
+  .msel-l label { display: flex; gap: 6px; align-items: center; padding: 4px 6px; border-radius: 4px; cursor: pointer; }
+  .msel-l label:hover { background: var(--sand); }
+  .msel-l input { accent-color: var(--orange); margin: 0; }
+  @media (prefers-color-scheme: dark) { .msel-l label:hover { background: var(--grid); } }
+  .reset { font: inherit; font-size: 13px; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+  .reset:hover { color: var(--fg); }
+  .flabel { flex-basis: 100%; font-size: 12px; color: var(--muted); font-family: var(--mono); }
   .tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font: 12px var(--mono); box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
   .seg button { font: inherit; font-size: 12px; padding: 6px 14px; background: var(--card); color: var(--fg); border: 0; cursor: pointer; }
@@ -234,6 +250,13 @@
   </div>
 
   <div id="view-ops" class="view" hidden>
+    <div class="filters" id="o-filters">
+      <div class="f"><span class="k">User</span><div class="msel" id="f-user"></div></div>
+      <div class="f"><span class="k">LOB</span><div class="msel" id="f-lob"></div></div>
+      <div class="f"><span class="k">Team</span><div class="msel" id="f-team"></div></div>
+      <button type="button" class="reset" id="f-reset">Reset filters</button>
+      <span class="flabel" id="f-label"></span>
+    </div>
     <p class="lede">Of <b id="o-l-yes">—</b> YES leads, reps called <b id="o-l-called">—</b>. The typical wait from their YES to the first call was <b id="o-l-med">—</b>, and <b id="o-l-conn">—</b> connected for 90 seconds or more.</p>
     <div class="tiles">
       <div class="card tile-accent"><p class="k">YES leads</p><div class="big" id="o-yes">—</div><div class="note">said YES in this date range</div></div>
@@ -481,6 +504,52 @@
   const catColor = (k) => css(k === OTHER ? '--pebble' : PAL[Math.min(catRank.has(k) ? catRank.get(k) : 9, 9)]);
   const catName = (k) => (k === OTHER ? 'Other outcomes' : D.cats[k]);
   const fold = (k) => (catRank.has(k) && catRank.get(k) < 9 ? k : OTHER);
+  // ---------- User / LOB / Team filters (like phone-team-calls). Apply to everything on this tab that has a rep.
+  const META = D.repMeta || D.reps.map(() => ['Unmatched', 'Unmatched']);
+  const FS = { user: null, lob: null, team: null };       // null = all
+  let allowed = null;                                      // Set of rep indexes, or null when no filter
+  function recompute() {
+    const on = FS.user || FS.lob || FS.team;
+    allowed = on ? new Set(D.reps.map((_, k) => k).filter((k) => (!FS.user || FS.user.has(D.reps[k])) && (!FS.team || FS.team.has(META[k][0])) && (!FS.lob || FS.lob.has(META[k][1])))) : null;
+    const parts = [FS.user ? (FS.user.size === 1 ? [...FS.user][0] : FS.user.size + ' users') : 'All users',
+      FS.lob ? (FS.lob.size === 1 ? [...FS.lob][0] : FS.lob.size + ' LOBs') : 'All LOBs', FS.team ? (FS.team.size === 1 ? [...FS.team][0] : FS.team.size + ' teams') : 'All teams'];
+    setText('f-label', parts.join(' · ') + (on ? ' · YES leads count when a selected rep made the first call' : ''));
+  }
+  const okRep = (k) => allowed == null || (k >= 0 && allowed.has(k));
+  const yesOK = ([t, i]) => { if (allowed == null) return true; const fo = (outT.get(i) || []).find((x) => x >= t); return fo != null && okRep(callRep.get(i + '|' + fo)); };
+  function msel(el, noun, plural, values, key) {
+    el.replaceChildren();
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'msel-b'; btn.setAttribute('aria-haspopup', 'listbox');
+    const pop = document.createElement('div'); pop.className = 'msel-p'; pop.hidden = true;
+    const q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search ' + plural + '…'; q.setAttribute('aria-label', 'Search ' + plural);
+    const list = document.createElement('div'); list.className = 'msel-l';
+    pop.append(q, list); el.append(btn, pop);
+    const label = () => { const v = FS[key]; btn.textContent = (v == null ? 'All ' + plural : v.size === 1 ? [...v][0] : v.size + ' ' + plural) + ' ▾'; };
+    const cur = () => FS[key] || new Set(values);
+    const commit = (set) => { FS[key] = set.size === values.length ? null : set; label(); recompute(); render(); draw(); };
+    function row(text, checked, onToggle, strong) {
+      const l = document.createElement('label'); const c = document.createElement('input'); c.type = 'checkbox'; c.checked = checked;
+      c.addEventListener('change', onToggle); l.append(c, document.createTextNode(' ' + text)); if (strong) l.style.fontWeight = '600'; list.appendChild(l);
+    }
+    function draw() {
+      list.replaceChildren(); const s = cur(), t = q.value.trim().toLowerCase();
+      row('(Select all)', s.size === values.length, () => commit(s.size === values.length ? new Set() : new Set(values)), true);
+      values.filter((v) => !t || v.toLowerCase().includes(t)).forEach((v) => row(v, s.has(v), () => { const n = new Set(cur()); n.has(v) ? n.delete(v) : n.add(v); commit(n); }));
+    }
+    q.addEventListener('input', draw);
+    btn.addEventListener('click', (ev) => { ev.stopPropagation(); const open = pop.hidden; document.querySelectorAll('.msel-p').forEach((p) => { p.hidden = true; }); pop.hidden = !open; if (open) { draw(); q.focus(); } });
+    pop.addEventListener('click', (ev) => ev.stopPropagation());
+    label(); el._reset = () => { FS[key] = null; q.value = ''; label(); };
+  }
+  document.addEventListener('click', () => document.querySelectorAll('.msel-p').forEach((p) => { p.hidden = true; }));
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') document.querySelectorAll('.msel-p').forEach((p) => { p.hidden = true; }); });
+  const uniq = (a) => [...new Set(a)].sort((x, y) => x.localeCompare(y));
+  msel($('f-user'), 'user', 'users', uniq(D.reps), 'user');
+  msel($('f-lob'), 'LOB', 'LOBs', uniq(META.map((m) => m[1])), 'lob');
+  msel($('f-team'), 'team', 'teams', uniq(META.map((m) => m[0])), 'team');
+  $('f-reset').addEventListener('click', () => { ['f-user', 'f-lob', 'f-team'].forEach((id) => $(id)._reset()); recompute(); render(); });
+  recompute();
+
   let pickedCat = null, pickedDisp = null, opsGrain = 'day', repSort = [10, -1];
 
   function statusOf(t, i) {
@@ -492,7 +561,7 @@
 
   function ops(f, e) {
     const inR = (t) => { const d = dayOf(t); return d >= f && d <= e; };
-    const C = D.calls.filter((c) => inR(c[0])), Y = D.yesFirst.filter((y) => inR(y[0]));
+    const C = D.calls.filter((c) => inR(c[0]) && okRep(c[2])), Y = D.yesFirst.filter((y) => inR(y[0]) && yesOK(y));
     const resp = [], hoopResp = [], buckets = [0, 0, 0, 0, 0, 0, 0], repResp = new Map(), status = new Map();
     Y.forEach(([t, i]) => {
       const [st, m, o] = statusOf(t, i);
@@ -508,7 +577,7 @@
     const out = C.filter((c) => c[6]);
     const calledP = new Set(out.map((c) => c[1])), connP = new Set(C.filter((c) => c[3] >= 90).map((c) => c[1]));
     const calledYes = Y.filter(([, i]) => (outT.get(i) || []).some(inR)).length;
-    const O = D.orders.filter((o) => o[0] >= f && o[0] <= e);
+    const O = D.orders.filter((o) => o[0] >= f && o[0] <= e && okRep(o[5]));
     const cats = new Map();
     C.forEach((c) => {
       const x = cats.get(c[4]) || { calls: 0, ppl: new Set(), d: new Map() }; x.calls++; x.ppl.add(c[1]);
@@ -597,8 +666,8 @@
   function opsTrend() {
     const m = new Map(), key = (d) => (opsGrain === 'day' ? d : opsGrain === 'week' ? weekStart(d) : d.slice(0, 7));
     const G = (k) => { if (!m.has(k)) m.set(k, { calls: 0, called: new Set(), conn: new Set(), sales: 0 }); return m.get(k); };
-    D.calls.forEach((c) => { const g = G(key(dayOf(c[0]))); if (c[6]) { g.calls++; g.called.add(c[1]); } if (c[3] >= 90) g.conn.add(c[1]); });
-    D.orders.forEach((o) => { G(key(o[0])).sales++; });
+    D.calls.forEach((c) => { if (!okRep(c[2])) return; const g = G(key(dayOf(c[0]))); if (c[6]) { g.calls++; g.called.add(c[1]); } if (c[3] >= 90) g.conn.add(c[1]); });
+    D.orders.forEach((o) => { if (okRep(o[5])) G(key(o[0])).sales++; });
     const lab = (k) => (opsGrain === 'month' ? MON[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4) : (opsGrain === 'week' ? 'Wk of ' : '') + dlabel(k));
     const pc = (a, b) => (b ? a / b * 100 : 0);
     combo($('o-trend'), [...m.entries()].sort().map(([k, g]) => [lab(k), g.calls, pc(g.conn.size, g.called.size), pc(g.sales, g.conn.size)]));
@@ -768,7 +837,7 @@
   }
   function renderCC(f, e) {
     const inR = (t) => { const d = dayOf(t); return d >= f && d <= e; };
-    const all = D.calls.filter((c) => c[8]);
+    const all = D.calls.filter((c) => c[8] && okRep(c[2]));
     // colors follow the whole-campaign ranking so they stay the same across date ranges
     const gl = new Map(); all.forEach((c) => gl.set(c[4], (gl.get(c[4]) || 0) + 1));
     const order = [...gl.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k); ccRank = new Map(order.map((k, i) => [k, i]));

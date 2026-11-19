@@ -204,6 +204,39 @@ for r in sms:
         if t is not None and (i not in yes_first or t < yes_first[i]): yes_first[i] = t
 yes_rows = sorted([[t, i] for i, t in yes_first.items()])
 for o in orders: o['rep_i'] = rid(o['rep'])
+
+
+ROSTER_ID = '1ntDeRRIGL-w4BqGsbRW0vB-GqEzBK6D4_A9FPdDxAZA'   # phone team roster (Schedule tab), same source as phone-team-calls
+
+
+def load_roster():
+    """{(first, last): [team, lob]} from each person's latest scheduled day up to today; cached for failed reads."""
+    cache = os.path.join(WORK, 'roster.json')
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+        cr = Credentials.from_service_account_file(SA_KEY, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
+        v = gspread.authorize(cr).open_by_key(ROSTER_ID).worksheet('Schedule').get_all_values()
+        h = v[0]; di, ti, li = h.index('Date'), h.index('Team'), h.index('LOB')
+        forms = [i for i, x in enumerate(h) if x in ('Name', 'Aloware Name', 'Call Tracker Name')]
+        today = datetime.date.today(); best = {}
+        for r in v[1:]:
+            try: d = datetime.datetime.strptime(r[di].strip(), '%m/%d/%Y').date()
+            except ValueError: continue
+            if d > today: continue
+            for i in forms:
+                k = fl(r[i])
+                if k and (k not in best or d >= best[k][0]): best[k] = (d, r[ti].strip() or 'Unmatched', r[li].strip() or 'Unmatched')
+        m = {' '.join(k): [t, l] for k, (_, t, l) in best.items()}
+        json.dump(m, open(cache, 'w')); return m
+    except Exception as e:
+        print('roster not read (%s); using cache' % str(e)[:80])
+        return json.load(open(cache)) if os.path.exists(cache) else {}
+
+
+ROS = load_roster()
+rep_meta = [ROS.get(' '.join(fl(n)), ['Unmatched', 'Unmatched']) for n in reps]
+print('reps matched to roster:', sum(1 for x in rep_meta if x[0] != 'Unmatched'), 'of', len(reps))
 pg = pg + [-1] * (len(idx) - len(pg))
 for p, i in idx.items():
     if pg[i] == -1:
@@ -218,7 +251,7 @@ asof = max([r['Started At'] for r in sms] + [''])
 sales_asof = json.load(open(SALES_META))['pulled_at'] if os.path.exists(SALES_META) else ''
 core = {'updated': {'sms': asof, 'calls': call_asof}, 'days': days, 'orders': order_rows, 'pg': pg,
         'groups': G['groups'], 'gsize': [G['size'].get(g, 0) for g in G['groups']],
-        'calls': call_rows, 'yesFirst': yes_rows, 'reps': reps, 'cats': cats, 'disps': disps, 'start': START}
+        'calls': call_rows, 'yesFirst': yes_rows, 'reps': reps, 'repMeta': rep_meta, 'cats': cats, 'disps': disps, 'start': START}
 data = dict(core, asof=asof, built=now_et().strftime('%Y-%m-%d %H:%M'))
 data['updated'] = dict(core['updated'], sales=sales_asof)
 data['sourceList'] = [
