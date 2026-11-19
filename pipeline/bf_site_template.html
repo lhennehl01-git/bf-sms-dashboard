@@ -309,9 +309,9 @@
 
     <section>
       <h2>Team performance</h2>
-      <p>Per team in this date range (Team and LOB from the phone team roster). Same counting as the rep table. Click a column to sort.</p>
+      <p>Per team in this date range (Team from the phone team roster). Same counting as the rep table. Click a column to sort.</p>
       <div class="card tw"><table class="sortable" id="o-team-t">
-        <thead><tr><th data-k="0">Team</th><th data-k="1">LOB</th><th class="n" data-k="2">Reps</th><th class="n" data-k="3">Calls</th><th class="n" data-k="4">Connected</th><th class="n" data-k="5">Connect rate</th><th class="n" data-k="6">Conversion</th><th class="n" data-k="7">Conversion rate</th><th class="n" data-k="8">Clubs</th><th class="n" data-k="9">PG1 upfront</th><th class="n" data-k="10">PG1 trial</th><th class="n" data-k="11">BFCM bundles</th><th class="n" data-k="12">Upfront rev</th></tr></thead>
+        <thead><tr><th data-k="0">Team</th><th class="n" data-k="1">Reps</th><th class="n" data-k="2">Calls</th><th class="n" data-k="3">Connected</th><th class="n" data-k="4">Connect rate</th><th class="n" data-k="5">Conversion</th><th class="n" data-k="6">Conversion rate</th><th class="n" data-k="7">Clubs</th><th class="n" data-k="8">PG1 upfront</th><th class="n" data-k="9">PG1 trial</th><th class="n" data-k="10">BFCM bundles</th><th class="n" data-k="11">Upfront rev</th></tr></thead>
         <tbody id="o-teams"></tbody>
         <tfoot id="o-teams-tot"></tfoot>
       </table></div>
@@ -565,7 +565,7 @@
   $('f-reset').addEventListener('click', () => { ['f-user', 'f-lob', 'f-team'].forEach((id) => $(id)._reset()); recompute(); render(); });
   recompute();
 
-  let pickedCat = null, pickedDisp = null, opsGrain = 'day', repSort = [10, -1], teamSort = [12, -1];
+  let pickedCat = null, pickedDisp = null, opsGrain = 'day', repSort = [10, -1], teamSort = [11, -1];
 
   function statusOf(t, i) {
     const o = (outT.get(i) || []).find((x) => x >= t), n = (incT.get(i) || []).find((x) => x >= t);
@@ -754,18 +754,18 @@
       t.lobs.add(lob); if (r.calls || r.sales) t.reps++; t.calls += r.calls; r.ppl.forEach((x) => t.ppl.add(x)); r.conn.forEach((x) => t.conn.add(x));
       t.sales += r.sales; t.up += r.up; for (const q in t.k) t.k[q] += r.k[q]; tm.set(team, t);
     });
-    const tl = [...tm.entries()].map(([n, t]) => [n, [...t.lobs].sort().join(', '), t.reps, t.calls, t.conn.size, pr(t.conn.size, t.ppl.size), t.sales, pr(t.sales, t.conn.size), t.k.club, t.k.pg1, t.k.trial, t.k.bfcm, t.up]);
+    const tl = [...tm.entries()].map(([n, t]) => [n, t.reps, t.calls, t.conn.size, pr(t.conn.size, t.ppl.size), t.sales, pr(t.sales, t.conn.size), t.k.club, t.k.pg1, t.k.trial, t.k.bfcm, t.up]);
     const [tk, td2] = teamSort;
     tl.sort((a, b) => { const x = a[tk], y = b[tk]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
-      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * td2 || b[12] - a[12]; });
-    const tfm = [null, null, int, int, int, pf, int, pf, int, int, int, int, money];
+      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * td2 || b[11] - a[11]; });
+    const tfm = [null, int, int, int, pf, int, pf, int, int, int, int, money];
     const ttb = $('o-teams'); ttb.replaceChildren();
-    if (!tl.length) { const c0 = ttb.insertRow().insertCell(); c0.colSpan = 13; c0.className = 'empty'; c0.textContent = 'No team activity in this date range.'; }
-    tl.forEach((r) => { const tr = ttb.insertRow(); r.forEach((v, i) => cell(tr, tfm[i] ? tfm[i](v) : v, i > 1)); });
+    if (!tl.length) { const c0 = ttb.insertRow().insertCell(); c0.colSpan = 12; c0.className = 'empty'; c0.textContent = 'No team activity in this date range.'; }
+    tl.forEach((r) => { const tr = ttb.insertRow(); r.forEach((v, i) => cell(tr, tfm[i] ? tfm[i](v) : v, i > 0)); });
     const ttf = $('o-teams-tot'); ttf.replaceChildren();
     if (tl.length) {
-      const tot = ['TOTAL', '', tl.reduce((a, r) => a + r[2], 0), o.outCalls, o.conn, pr(o.conn, o.called), o.sales, pr(o.sales, o.conn), o.kt.club, o.kt.pg1, o.kt.trial, o.kt.bfcm, o.revenue];
-      const tr = ttf.insertRow(); tot.forEach((v, i) => cell(tr, tfm[i] ? tfm[i](v) : v, i > 1));
+      const tot = ['TOTAL', tl.reduce((a, r) => a + r[1], 0), o.outCalls, o.conn, pr(o.conn, o.called), o.sales, pr(o.sales, o.conn), o.kt.club, o.kt.pg1, o.kt.trial, o.kt.bfcm, o.revenue];
+      const tr = ttf.insertRow(); tot.forEach((v, i) => cell(tr, tfm[i] ? tfm[i](v) : v, i > 0));
     }
     $('o-team-t').querySelectorAll('th').forEach((th) => th.setAttribute('aria-sort', +th.dataset.k === tk ? (td2 > 0 ? 'ascending' : 'descending') : 'none'));
 
@@ -792,7 +792,7 @@
   }
   $('o-team-t').querySelectorAll('th').forEach((th) => {
     th.tabIndex = 0;
-    const go = () => { const k = +th.dataset.k; teamSort = [k, teamSort[0] === k ? -teamSort[1] : (k <= 1 ? 1 : -1)]; render(); };
+    const go = () => { const k = +th.dataset.k; teamSort = [k, teamSort[0] === k ? -teamSort[1] : (k === 0 ? 1 : -1)]; render(); };
     th.addEventListener('click', go); th.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } });
   });
   $('o-rep-t').querySelectorAll('th').forEach((th) => {
