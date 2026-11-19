@@ -265,25 +265,6 @@
     </section>
 
     <section>
-      <h2>Call outcomes</h2>
-      <p>Calls on the Black Friday line, grouped by outcome. Pick an outcome to see its dispositions, then a disposition to see the reps.</p>
-      <div class="three">
-        <div class="card tw"><table>
-          <thead><tr><th>Outcome</th><th class="n">Calls</th><th class="n">People</th><th class="n">Share</th></tr></thead>
-          <tbody id="o-cats"></tbody>
-        </table></div>
-        <div class="card tw">
-          <p class="k" id="o-drill-h">Dispositions</p>
-          <table><thead><tr><th>Disposition</th><th class="n">Calls</th><th class="n">People</th></tr></thead><tbody id="o-drill"></tbody></table>
-        </div>
-        <div class="card tw">
-          <p class="k" id="o-drill2-h">Reps</p>
-          <table><thead><tr><th>Rep</th><th class="n">Calls</th><th class="n">People</th></tr></thead><tbody id="o-drill2"></tbody></table>
-        </div>
-      </div>
-    </section>
-
-    <section>
       <h2>Connected-call outcomes</h2>
       <p>Connected calls only (the disposition counts as a connect in the Call Disposition sheet). Click an outcome to see its dispositions and setters; click a disposition to filter the setters.</p>
       <div class="three">
@@ -659,22 +640,9 @@
     bars($('o-resp'), bl.map((l, i) => [l, o.buckets[i]]), css('--s1'), 'YES leads');
     opsTrend();
 
-    // outcomes drill-down: outcome -> disposition -> rep
+    // outcome ranking (colors for the per-rep donuts)
     const cl = [...o.cats.entries()].sort((a, b) => b[1].calls - a[1].calls);
     catRank = new Map(cl.map(([k], i) => [k, i]));
-    if (pickedCat == null || !o.cats.has(pickedCat)) { pickedCat = cl.length ? cl[0][0] : null; pickedDisp = null; }
-    const again = () => renderOps(f, e);
-    pickRows($('o-cats'), cl.map(([k, x]) => [k, [D.cats[k], int(x.calls), int(x.ppl.size), r1(x.calls, o.calls)]]), 4,
-      (k) => k === pickedCat, (k) => { pickedCat = k; pickedDisp = null; again(); }, 'No calls in this date range.');
-    const dmap = pickedCat == null ? new Map() : o.cats.get(pickedCat).d;
-    const dl = [...dmap.entries()].sort((a, b) => b[1].calls - a[1].calls);
-    if (pickedDisp == null || !dmap.has(pickedDisp)) pickedDisp = dl.length ? dl[0][0] : null;
-    setText('o-drill-h', pickedCat == null ? 'Dispositions' : 'Dispositions in ' + D.cats[pickedCat]);
-    pickRows($('o-drill'), dl.map(([k, y]) => [k, [D.disps[k], int(y.calls), int(y.ppl.size)]]), 3,
-      (k) => k === pickedDisp, (k) => { pickedDisp = k; again(); }, 'Pick an outcome.');
-    setText('o-drill2-h', pickedDisp == null ? 'Reps' : 'Reps on ' + D.disps[pickedDisp]);
-    const rl2 = pickedDisp == null ? [] : [...dmap.get(pickedDisp).r.entries()].sort((a, b) => b[1].calls - a[1].calls);
-    pickRows($('o-drill2'), rl2.map(([k, z]) => [k, [k >= 0 ? D.reps[k] : '(no rep)', int(z.calls), int(z.ppl.size)]]), 3, null, null, 'Pick a disposition.');
 
     // rep table: sortable, with a TOTAL row
     const pr = (a, b) => (b ? a / b * 100 : null);
