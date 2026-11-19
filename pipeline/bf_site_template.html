@@ -148,6 +148,12 @@
   th { text-align: left; font: 600 11px/1.2 var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); padding: 8px; }
   td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
   td.n, th.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.perf { font-size: 13px; table-layout: auto; }
+  table.perf th { white-space: normal; vertical-align: bottom; padding: 8px 6px; font-size: 10px; letter-spacing: .04em; line-height: 1.25; }
+  table.perf th.n { white-space: normal; }
+  table.perf td { padding: 7px 6px; }
+  table.perf th:first-child, table.perf td:first-child { padding-left: 0; }
+  table.perf th:last-child, table.perf td:last-child { padding-right: 0; }
   .empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
   details { font-size: 13px; color: var(--muted); }
   summary { cursor: pointer; color: var(--fg); }
@@ -330,7 +336,7 @@
     <section>
       <h2>Team performance</h2>
       <p>Per team in this date range (Team from the phone team roster). Same counting as the rep table. Click a column to sort.</p>
-      <div class="card tw"><table class="sortable" id="o-team-t">
+      <div class="card tw"><table class="sortable perf" id="o-team-t">
         <thead><tr><th data-k="0">Team</th><th class="n" data-k="1">Reps</th><th class="n" data-k="2">Calls</th><th class="n" data-k="3">Connected</th><th class="n" data-k="4">Connect rate</th><th class="n" data-k="5">Conversion</th><th class="n" data-k="6">Conversion rate</th><th class="n" data-k="7">Clubs</th><th class="n" data-k="8">PG1 upfront</th><th class="n" data-k="9">PG1 trial</th><th class="n" data-k="10">BFCM bundles</th><th class="n" data-k="11">Upfront rev</th></tr></thead>
         <tbody id="o-teams"></tbody>
         <tfoot id="o-teams-tot"></tfoot>
@@ -340,7 +346,7 @@
     <section>
       <h2>Rep performance</h2>
       <p>Per rep in this date range. Click a column to sort. Calls = outbound calls. Connect rate = people connected 90 sec+ ÷ people called. Conversion = orders; conversion rate = orders ÷ people connected.</p>
-      <div class="card tw"><table class="sortable" id="o-rep-t">
+      <div class="card tw"><table class="sortable perf" id="o-rep-t">
         <thead><tr><th data-k="0">Rep</th><th data-k="1">Team</th><th class="n" data-k="2">Calls</th><th class="n" data-k="3">Connected</th><th class="n" data-k="4">Connect rate</th><th class="n" data-k="5">Conversion</th><th class="n" data-k="6">Conversion rate</th><th class="n" data-k="7">Clubs</th><th class="n" data-k="8">PG1 upfront</th><th class="n" data-k="9">PG1 trial</th><th class="n" data-k="10">BFCM bundles</th><th class="n" data-k="11">Upfront rev</th></tr></thead>
         <tbody id="o-reps"></tbody>
         <tfoot id="o-reps-tot"></tfoot>
