@@ -100,6 +100,9 @@
   table.sortable th[aria-sort="ascending"]::after { content: " ▲"; font-size: 9px; }
   table.sortable th[aria-sort="descending"]::after { content: " ▼"; font-size: 9px; }
   tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
+  .pill { display: inline-block; font: 600 10px/1 var(--mono); background: var(--sand); color: var(--fg); border-radius: 10px; padding: 3px 7px; margin-left: 4px; letter-spacing: 0; }
+  .pill:empty { display: none; }
+  @media (prefers-color-scheme: dark) { .pill { background: var(--grid); } }
   .tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font: 12px var(--mono); box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
   .seg button { font: inherit; font-size: 12px; padding: 6px 14px; background: var(--card); color: var(--fg); border: 0; cursor: pointer; }
@@ -281,10 +284,30 @@
     </section>
 
     <section>
+      <h2>Connected-call outcomes</h2>
+      <p>Connected calls only (the disposition counts as a connect in the Call Disposition sheet). Click an outcome to see its dispositions and setters; click a disposition to filter the setters.</p>
+      <div class="three">
+        <div class="card"><p class="k">Outcome categories</p><div id="cc-donut"></div></div>
+        <div class="card"><p class="k"><span id="cc-d-h">Dispositions</span> <span class="pill" id="cc-d-n"></span></p><div class="chart" id="cc-disp"></div></div>
+        <div class="card"><p class="k"><span id="cc-r-h">Setters</span> <span class="pill" id="cc-r-n"></span></p><div class="chart" id="cc-reps"></div></div>
+      </div>
+      <div class="row" style="margin-top:20px">
+        <h3 style="margin:0;font:600 15px var(--font)">Connected-call outcomes trend</h3>
+        <div class="row" style="gap:8px">
+          <div class="seg" id="cc-seg" role="group" aria-label="Outcome trend period"><button type="button" data-g="day" aria-pressed="false">Daily</button><button type="button" data-g="week" aria-pressed="true">Weekly</button><button type="button" data-g="month" aria-pressed="false">Monthly</button></div>
+          <div class="seg" id="cc-mode" role="group" aria-label="Count or percent"><button type="button" data-g="count" aria-pressed="true">Count</button><button type="button" data-g="pct" aria-pressed="false">%</button></div>
+          <select id="cc-rep" aria-label="Setter"><option value="all">All setters</option></select>
+        </div>
+      </div>
+      <p style="margin:6px 0 10px">Whole campaign, stacked by outcome. Count = connected calls; % = each outcome's share of that period. Weeks start on Sunday.</p>
+      <div class="card"><div class="legend" id="cc-leg"></div><div class="chart" id="cc-trend"></div></div>
+    </section>
+
+    <section>
       <h2>Rep performance</h2>
-      <p>Per rep in this date range. Click a column to sort. Conversion = sales ÷ people connected 90 sec+. Response time uses each lead's first call.</p>
+      <p>Per rep in this date range. Click a column to sort. Calls = outbound calls. Connect rate = people connected 90 sec+ ÷ people called. Conversion = orders; conversion rate = orders ÷ people connected.</p>
       <div class="card tw"><table class="sortable" id="o-rep-t">
-        <thead><tr><th data-k="0">Rep</th><th class="n" data-k="1">Leads called</th><th class="n" data-k="2">Calls</th><th class="n" data-k="3">Connected</th><th class="n" data-k="4">Connect rate</th><th class="n" data-k="5">Avg response</th><th class="n" data-k="6">Sales</th><th class="n" data-k="7">Upfront</th><th class="n" data-k="8">Conversion</th></tr></thead>
+        <thead><tr><th data-k="0">Rep</th><th class="n" data-k="1">Calls</th><th class="n" data-k="2">Connected</th><th class="n" data-k="3">Connect rate</th><th class="n" data-k="4">Conversion</th><th class="n" data-k="5">Conversion rate</th><th class="n" data-k="6">Clubs</th><th class="n" data-k="7">PG1 upfront</th><th class="n" data-k="8">PG1 trial</th><th class="n" data-k="9">BFCM bundles</th><th class="n" data-k="10">Upfront rev</th></tr></thead>
         <tbody id="o-reps"></tbody>
         <tfoot id="o-reps-tot"></tfoot>
       </table></div>
@@ -477,7 +500,7 @@
   const catColor = (k) => css(k === OTHER ? '--pebble' : PAL[Math.min(catRank.has(k) ? catRank.get(k) : 9, 9)]);
   const catName = (k) => (k === OTHER ? 'Other outcomes' : D.cats[k]);
   const fold = (k) => (catRank.has(k) && catRank.get(k) < 9 ? k : OTHER);
-  let pickedCat = null, pickedDisp = null, opsGrain = 'day', repSort = [7, -1];
+  let pickedCat = null, pickedDisp = null, opsGrain = 'day', repSort = [10, -1];
 
   function statusOf(t, i) {
     const o = (outT.get(i) || []).find((x) => x >= t), n = (incT.get(i) || []).find((x) => x >= t);
@@ -513,11 +536,12 @@
       x.d.set(c[5], y); cats.set(c[4], x);
     });
     const reps = new Map();
-    const R = (k) => { if (!reps.has(k)) reps.set(k, { calls: 0, ppl: new Set(), conn: new Set(), sales: 0, up: 0, cats: new Map() }); return reps.get(k); };
+    const R = (k) => { if (!reps.has(k)) reps.set(k, { calls: 0, ppl: new Set(), conn: new Set(), sales: 0, up: 0, cats: new Map(), k: { club: 0, pg1: 0, trial: 0, bfcm: 0 } }); return reps.get(k); };
     out.forEach((c) => { if (c[2] < 0) return; const r = R(c[2]); r.calls++; r.ppl.add(c[1]); r.cats.set(c[4], (r.cats.get(c[4]) || 0) + 1); });
     C.forEach((c) => { if (c[2] >= 0 && c[3] >= 90) R(c[2]).conn.add(c[1]); });
-    O.forEach((o) => { if (o[5] >= 0) { const r = R(o[5]); r.sales++; r.up += o[3]; } });
-    return { yes: Y.length, calledYes, med: median(resp), within15: buckets[0] + buckets[1], buckets, status, gauge: avg(hoopResp), hoopN: hoopResp.length,
+    const kt = { club: 0, pg1: 0, trial: 0, bfcm: 0 };
+    O.forEach((o) => { o[2].forEach((it) => { if (it[1] in kt) kt[it[1]]++; }); if (o[5] >= 0) { const r = R(o[5]); r.sales++; r.up += o[3]; o[2].forEach((it) => { if (it[1] in r.k) r.k[it[1]]++; }); } });
+    return { kt, yes: Y.length, calledYes, med: median(resp), within15: buckets[0] + buckets[1], buckets, status, gauge: avg(hoopResp), hoopN: hoopResp.length,
       called: calledP.size, conn: connP.size, sales: O.length, revenue: O.reduce((a, o) => a + o[3], 0), calls: C.length, outCalls: out.length, cats, reps, repResp };
   }
 
@@ -654,20 +678,19 @@
 
     // rep table: sortable, with a TOTAL row
     const pr = (a, b) => (b ? a / b * 100 : null);
-    const rl = [...o.reps.entries()].map(([k, r]) => [D.reps[k], r.ppl.size, r.calls, r.conn.size, pr(r.conn.size, r.ppl.size), avg(o.repResp.get(k) || []), r.sales, r.up, pr(r.sales, r.conn.size)]);
+    const rl = [...o.reps.entries()].map(([k, r]) => [D.reps[k], r.calls, r.conn.size, pr(r.conn.size, r.ppl.size), r.sales, pr(r.sales, r.conn.size), r.k.club, r.k.pg1, r.k.trial, r.k.bfcm, r.up]);
     const [sk, sd] = repSort;
     rl.sort((a, b) => { const x = a[sk], y = b[sk]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
-      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * sd || b[7] - a[7]; });
-    const fm = [null, int, int, int, (v) => (v == null ? '—' : v.toFixed(1) + '%'), dur, int, money, (v) => (v == null ? '—' : v.toFixed(1) + '%')];
+      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * sd || b[10] - a[10] || b[2] - a[2]; });
+    const pf = (v) => (v == null ? '—' : v.toFixed(1) + '%');
+    const fm = [null, int, int, pf, int, pf, int, int, int, int, money];
     const tb = $('o-reps'); tb.replaceChildren();
-    if (!rl.length) { const td = tb.insertRow().insertCell(); td.colSpan = 9; td.className = 'empty'; td.textContent = 'No rep activity in this date range.'; }
+    if (!rl.length) { const td = tb.insertRow().insertCell(); td.colSpan = 11; td.className = 'empty'; td.textContent = 'No rep activity in this date range.'; }
     rl.forEach((r) => { const tr = tb.insertRow(); r.forEach((v, i) => cell(tr, fm[i] ? fm[i](v) : v, i > 0)); });
     const tf = $('o-reps-tot'); tf.replaceChildren();
     if (rl.length) {
-      const allResp = [].concat(...o.repResp.values()), sum = (i) => rl.reduce((a, r) => a + r[i], 0);
-      const tot = ['TOTAL', o.called, o.outCalls, o.conn, pr(o.conn, o.called), avg(allResp), o.sales, o.revenue, pr(o.sales, o.conn)];
+      const tot = ['TOTAL', o.outCalls, o.conn, pr(o.conn, o.called), o.sales, pr(o.sales, o.conn), o.kt.club, o.kt.pg1, o.kt.trial, o.kt.bfcm, o.revenue];
       const tr = tf.insertRow(); tot.forEach((v, i) => cell(tr, fm[i] ? fm[i](v) : v, i > 0));
-      void sum;
     }
     $('o-rep-t').querySelectorAll('th').forEach((th) => th.setAttribute('aria-sort', +th.dataset.k === sk ? (sd > 0 ? 'ascending' : 'descending') : 'none'));
 
@@ -701,6 +724,120 @@
     opsGrain = b.dataset.g; document.querySelectorAll('#o-seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); opsTrend();
   }));
 
+  // ---------- Connected-call outcomes (calls whose disposition counts as a connect in the Call Disposition sheet)
+  let ccCat = null, ccDisp = null, ccGrain = 'week', ccMode = 'count', ccRep = 'all', ccRank = new Map();
+  const ccColor = (k) => css(PAL[Math.min(ccRank.has(k) ? ccRank.get(k) : 9, 9)]);
+  function hpick(el, rows, total, onPick, picked, empty) {      // rows: [key, label, value, color]
+    el.replaceChildren(); el.style.minHeight = 'auto';
+    if (!rows.length) { const p = document.createElement('div'); p.className = 'empty'; p.textContent = empty; el.appendChild(p); return; }
+    const W = Math.max(el.clientWidth, 280), rowH = 26, H = rows.length * rowH;
+    const lab = Math.min(Math.max(...rows.map((r) => String(r[1]).length)) * 6.4 + 8, W * 0.45), valw = 92, span = Math.max(W - lab - valw, 40);
+    const svg = svgEl(W, H, rows.map((r) => r[1] + ' ' + r[2]).join(', ')), mk = mkIn(svg), max = Math.max(...rows.map((r) => r[2]), 1);
+    rows.forEach((r, i) => {
+      const y = i * rowH, w = Math.max((r[2] / max) * span, r[2] ? 2 : 0), on = picked != null && r[0] === picked;
+      const g = document.createElementNS(NS, 'g'); svg.appendChild(g);
+      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', lab - 8); t.setAttribute('y', y + rowH / 2 + 4); t.setAttribute('text-anchor', 'end');
+      let name = String(r[1]); const maxc = Math.floor((lab - 8) / 6.2); if (name.length > maxc) name = name.slice(0, maxc - 1) + '…';
+      t.textContent = name; if (on) t.setAttribute('class', 'val'); g.appendChild(t);
+      const tt = document.createElementNS(NS, 'title'); tt.textContent = r[1]; g.appendChild(tt);
+      const b = document.createElementNS(NS, 'rect'); b.setAttribute('x', lab); b.setAttribute('y', y + 5); b.setAttribute('width', w); b.setAttribute('height', rowH - 10); b.setAttribute('rx', 3);
+      b.setAttribute('fill', r[3]); if (picked != null && !on) b.setAttribute('opacity', '.45'); g.appendChild(b);
+      const v = document.createElementNS(NS, 'text'); v.setAttribute('x', lab + w + 8); v.setAttribute('y', y + rowH / 2 + 4); v.setAttribute('class', 'val');
+      v.textContent = int(r[2]) + ' (' + (total ? Math.round(r[2] / total * 100) : 0) + '%)'; g.appendChild(v);
+      if (onPick) { g.style.cursor = 'pointer'; g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button');
+        g.addEventListener('click', () => onPick(r[0])); g.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onPick(r[0]); } }); }
+    });
+    el.appendChild(svg);
+  }
+  function bigDonut(el, rows, total, onPick, picked) {        // rows: [key, label, value]
+    el.replaceChildren();
+    if (!total) { const p = document.createElement('div'); p.className = 'empty'; p.textContent = 'No connected calls in this date range.'; el.appendChild(p); return; }
+    const S = 220, r = 80, svg = svgEl(S, S, rows.map((x) => x[1] + ' ' + x[2]).join(', ')), mk = mkIn(svg);
+    svg.style.maxWidth = '240px'; svg.style.display = 'block'; svg.style.margin = '0 auto';
+    let a = -Math.PI / 2;
+    rows.forEach(([k, , n]) => {
+      const b = a + (n / total) * 2 * Math.PI;
+      const pth = rows.length === 1 ? mk('circle', { cx: S / 2, cy: S / 2, r, fill: 'none', stroke: ccColor(k), 'stroke-width': 34 })
+        : mk('path', { d: arc(S / 2, S / 2, r, a, b - 0.002), fill: 'none', stroke: ccColor(k), 'stroke-width': picked === k ? 42 : 34 });
+      if (picked != null && picked !== k) pth.setAttribute('opacity', '.5');
+      pth.style.cursor = 'pointer'; pth.addEventListener('click', () => onPick(k)); a = b;
+    });
+    const t = mk('text', { x: S / 2, y: S / 2 + 2, 'text-anchor': 'middle', class: 'val' }); t.textContent = int(total); t.style.fontSize = '22px';
+    mk('text', { x: S / 2, y: S / 2 + 20, 'text-anchor': 'middle' }).textContent = 'connected calls';
+    el.appendChild(svg);
+    const leg = document.createElement('div'); leg.className = 'legend'; leg.style.marginTop = '10px'; leg.style.justifyContent = 'center';
+    rows.forEach(([k, l, n]) => { const s2 = document.createElement('span'), i = document.createElement('i'); i.style.background = ccColor(k);
+      s2.append(i, `${l} ${int(n)} (${Math.round(n / total * 100)}%)`); s2.style.cursor = 'pointer'; if (picked === k) s2.style.color = css('--fg');
+      s2.addEventListener('click', () => onPick(k)); leg.appendChild(s2); });
+    el.appendChild(leg);
+  }
+  function stack(el, periods, keys, mode) {                   // periods: [[label, Map(cat->n)]]
+    el.replaceChildren();
+    if (!periods.length) { const p = document.createElement('div'); p.className = 'empty'; p.textContent = 'No connected calls yet.'; el.appendChild(p); return; }
+    const W = Math.max(el.clientWidth, 280), H = 280, T = 14, Bm = 24;
+    const tots = periods.map(([, m]) => [...m.values()].reduce((a, b) => a + b, 0));
+    const max = mode === 'pct' ? 100 : Math.max(...tots, 1), step = Math.pow(10, Math.floor(Math.log10(max))), top = mode === 'pct' ? 100 : Math.ceil(max / step) * step;
+    const L = (mode === 'pct' ? 4 : String(int(top)).length) * 7 + 14, Rr = 6;
+    const svg = svgEl(W, H, 'Connected-call outcomes by period'), mk = mkIn(svg), y = (v) => H - Bm - (v / top) * (H - Bm - T);
+    for (let i = 0; i <= 4; i++) { const v = (top / 4) * i; mk('line', { x1: L, x2: W - Rr, y1: y(v), y2: y(v), stroke: css('--grid') });
+      mk('text', { x: L - 6, y: y(v) + 4, 'text-anchor': 'end' }).textContent = mode === 'pct' ? Math.round(v) + '%' : int(Math.round(v)); }
+    const bw = (W - L - Rr) / periods.length, w = Math.min(Math.max(bw * 0.7, 2), 90);
+    const tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true;
+    periods.forEach(([lab, m], i) => {
+      const x = L + i * bw + (bw - w) / 2; let acc = 0;
+      keys.forEach((k) => {
+        const n = m.get(k) || 0; if (!n) return;
+        const v = mode === 'pct' ? n / tots[i] * 100 : n, y0 = y(acc), y1 = y(acc + v); acc += v;
+        const rc = mk('rect', { x, y: y1, width: w, height: Math.max(y0 - y1, 0.5), fill: ccColor(k) });
+        rc.addEventListener('pointermove', (ev) => { const b = el.getBoundingClientRect(); tip.textContent = `${lab} · ${D.cats[k]}: ${int(n)} (${Math.round(n / tots[i] * 100)}%)`; tip.hidden = false;
+          tip.style.left = Math.max(Math.min(ev.clientX - b.left + 10, b.width - tip.offsetWidth - 4), 0) + 'px'; tip.style.top = Math.max(ev.clientY - b.top - 30, 0) + 'px'; });
+        rc.addEventListener('pointerleave', () => { tip.hidden = true; });
+        if (y0 - y1 > 16 && w > 30) { const t = mk('text', { x: x + w / 2, y: (y0 + y1) / 2 + 4, 'text-anchor': 'middle' }); t.textContent = mode === 'pct' ? Math.round(v) + '%' : int(n); t.style.fill = '#fff'; t.style.fontWeight = '600'; }
+      });
+      mk('text', { x: x + w / 2, y: H - 6, 'text-anchor': 'middle' }).textContent = lab;
+    });
+    el.appendChild(svg); el.appendChild(tip);
+  }
+  function renderCC(f, e) {
+    const inR = (t) => { const d = dayOf(t); return d >= f && d <= e; };
+    const all = D.calls.filter((c) => c[8]);
+    // colors follow the whole-campaign ranking so they stay the same across date ranges
+    const gl = new Map(); all.forEach((c) => gl.set(c[4], (gl.get(c[4]) || 0) + 1));
+    const order = [...gl.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k); ccRank = new Map(order.map((k, i) => [k, i]));
+    const C = all.filter((c) => inR(c[0]));
+    const cats = new Map();
+    C.forEach((c) => { const x = cats.get(c[4]) || { n: 0, d: new Map(), r: new Map(), dr: new Map() }; x.n++;
+      x.d.set(c[5], (x.d.get(c[5]) || 0) + 1); x.r.set(c[2], (x.r.get(c[2]) || 0) + 1);
+      const m = x.dr.get(c[5]) || new Map(); m.set(c[2], (m.get(c[2]) || 0) + 1); x.dr.set(c[5], m); cats.set(c[4], x); });
+    const cl = [...cats.entries()].sort((a, b) => b[1].n - a[1].n);
+    if (ccCat == null || !cats.has(ccCat)) { ccCat = cl.length ? cl[0][0] : null; ccDisp = null; }
+    const x = ccCat == null ? null : cats.get(ccCat);
+    if (ccDisp != null && (!x || !x.d.has(ccDisp))) ccDisp = null;
+    const again = () => renderCC(f, e);
+    bigDonut($('cc-donut'), cl.map(([k, v]) => [k, D.cats[k], v.n]), C.length, (k) => { ccCat = k; ccDisp = null; again(); }, ccCat);
+    setText('cc-d-h', ccCat == null ? 'Dispositions' : `Dispositions in “${D.cats[ccCat]}”`); setText('cc-d-n', x ? int(x.n) : '');
+    hpick($('cc-disp'), x ? [...x.d.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => [k, D.disps[k], n, ccColor(ccCat)]) : [], x ? x.n : 0,
+      (k) => { ccDisp = ccDisp === k ? null : k; again(); }, ccDisp, 'Pick an outcome.');
+    const rm = x ? (ccDisp != null ? x.dr.get(ccDisp) : x.r) : new Map(), rt = [...rm.values()].reduce((a, b) => a + b, 0);
+    setText('cc-r-h', ccCat == null ? 'Setters' : `Setters — “${ccDisp != null ? D.disps[ccDisp] : D.cats[ccCat]}”`); setText('cc-r-n', rt ? int(rt) : '');
+    hpick($('cc-reps'), [...rm.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => [k, k >= 0 ? D.reps[k] : '(no rep)', n, css('--gray')]), rt, null, null, 'Pick an outcome.');
+    // trend (whole campaign, optional setter filter)
+    const sel2 = $('cc-rep'), cur = sel2.value || 'all';
+    const rs = [...new Set(all.map((c) => c[2]).filter((k) => k >= 0))].sort((a, b) => D.reps[a].localeCompare(D.reps[b]));
+    if (sel2.options.length !== rs.length + 1) { sel2.replaceChildren(new Option('All setters', 'all'), ...rs.map((k) => new Option(D.reps[k], String(k)))); sel2.value = cur; }
+    const key = (d) => (ccGrain === 'day' ? d : ccGrain === 'week' ? weekStart(d) : d.slice(0, 7));
+    const pm = new Map();
+    all.forEach((c) => { if (ccRep !== 'all' && String(c[2]) !== ccRep) return; const k = key(dayOf(c[0])); const m = pm.get(k) || new Map(); m.set(c[4], (m.get(c[4]) || 0) + 1); pm.set(k, m); });
+    const lab = (k) => (ccGrain === 'month' ? MON[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4) : (ccGrain === 'week' ? 'Wk of ' : '') + dlabel(k));
+    stack($('cc-trend'), [...pm.entries()].sort().map(([k, m]) => [lab(k), m]), order, ccMode);
+    const leg = $('cc-leg'); leg.replaceChildren();
+    order.forEach((k) => { const s2 = document.createElement('span'), i = document.createElement('i'); i.style.background = ccColor(k); s2.append(i, D.cats[k]); leg.appendChild(s2); });
+  }
+  const segWire = (id, set) => document.querySelectorAll('#' + id + ' button').forEach((b) => b.addEventListener('click', () => {
+    set(b.dataset.g); document.querySelectorAll('#' + id + ' button').forEach((x2) => x2.setAttribute('aria-pressed', String(x2 === b))); render(); }));
+  segWire('cc-seg', (v) => { ccGrain = v; }); segWire('cc-mode', (v) => { ccMode = v; });
+  $('cc-rep').addEventListener('change', (ev) => { ccRep = ev.target.value; render(); });
+
   function render() {
     $('custom').hidden = sel.value !== 'custom';
     const [f, e] = range(), m = compute(f, e);
@@ -720,10 +857,11 @@
     bars($('h-yes'), m.hours.map((h) => [hl(h[0]), h[2]]), css('--s2'), 'YES replies');
     trend();
     renderOps(f, e);
+    renderCC(f, e);
   }
 
-  document.querySelectorAll('.seg:not(#o-seg) button').forEach((b) => b.addEventListener('click', () => {
-    grain = b.dataset.g; document.querySelectorAll('.seg:not(#o-seg) button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); trend();
+  document.querySelectorAll('.seg:not(#o-seg):not(#cc-seg):not(#cc-mode) button').forEach((b) => b.addEventListener('click', () => {
+    grain = b.dataset.g; document.querySelectorAll('.seg:not(#o-seg):not(#cc-seg):not(#cc-mode) button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); trend();
   }));
   function showView(v) {
     document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.view === v)));

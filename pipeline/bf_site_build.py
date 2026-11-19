@@ -46,6 +46,9 @@ def kind(p):
 sms_files, call_files, _ = inputs()
 
 
+CONN = {}   # disposition -> 1/0 connected, from the sheet
+
+
 def load_dispositions():
     """{disposition: category} from the TMA disposition master sheet; cached so a failed read keeps the last copy."""
     cache = os.path.join(WORK, 'dispositions.json')
@@ -62,15 +65,21 @@ def load_dispositions():
             di = h.index('call disposition') if 'call disposition' in h else 0
             ci = h.index('disposition category') if 'disposition category' in h else 1
             si = next((i for i, x in enumerate(h) if x.startswith('suggested category')), None)   # used until column B is filled
+            ki = next((i for i, x in enumerate(h) if x.startswith('connects')), None)               # "Connects Based on Call Disposition"
+            for r in v[1:]:
+                if ki is not None and len(r) > ki and r[0].strip() and r[0].strip() not in CONN and r[ki].strip() in ('0', '1'):
+                    CONN[r[0].strip()] = int(r[ki])
             for r in v[1:]:
                 if len(r) <= max(di, ci) or not r[di].strip() or r[di].strip() in m: continue
                 c = r[ci].strip() or (r[si].strip() if si is not None and len(r) > si else '')
                 if c: m[r[di].strip()] = c
         if m:
-            json.dump(m, open(cache, 'w'))
+            json.dump(m, open(cache, 'w')); json.dump(CONN, open(cache.replace('.json', '_connects.json'), 'w'))
             return m
     except Exception as e:
         print('disposition sheet not read (%s); using cache' % str(e)[:80])
+    cc = cache.replace('.json', '_connects.json')
+    if os.path.exists(cc): CONN.update(json.load(open(cc)))
     return json.load(open(cache)) if os.path.exists(cache) else {}
 
 
@@ -185,7 +194,8 @@ for r in calls:
     disp = (r.get('Call Disposition') or '').strip()
     cat = category(disp, r['Disposition Status'], talk)
     call_rows.append([t, pid(p), rid(who), talk, ix(cats, cat_ix, cat), ix(disps, disp_ix, disp or '(none) ' + r['Disposition Status']),
-                      1 if r['Direction'] == 'outbound' else 0, 1 if r['Disposition Status'] == 'completed' else 0])
+                      1 if r['Direction'] == 'outbound' else 0, 1 if r['Disposition Status'] == 'completed' else 0,
+                      CONN.get(disp, 0)])   # 8: connected by disposition
 call_rows.sort()
 yes_first = {}
 for r in sms:
