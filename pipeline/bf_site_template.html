@@ -370,7 +370,7 @@
         <tr><td>Replies</td><td>People who texted back on that line, counted once each in the date range.</td></tr>
         <tr><td>YES</td><td>People whose reply carries Aloware's Black Friday YES tag. A support question can land here.</td></tr>
         <tr><td>YES replies (charts)</td><td>Trend and by-hour charts count YES texts, so one person can count more than once.</td></tr>
-        <tr><td>Called</td><td>YES leads with at least one outbound call on the Black Friday line (same number as "YES leads called" in the Slack update).</td></tr>
+        <tr><td>Called</td><td>Of the YES leads in the date range, those with an outbound call on the Black Friday line after their YES, on any day up to now. Same number on both tabs and in the Slack update.</td></tr>
         <tr><td>Connected</td><td>People with at least one call of 90 seconds or more on the Black Friday line.</td></tr>
         <tr><td>Converted</td><td>Orders in the call tracker with Call Type "SMS blast", one per rep and customer per day.</td></tr>
         <tr><td>What sold</td><td>BFCM bundles counted on their own. Products with "Trial" in the name are trials, not paid PG1.</td></tr>
@@ -443,7 +443,9 @@
     const U = (k) => { const s = new Set(); ds.forEach((d) => D.days[d][k].forEach((i) => s.add(i))); return s; };
     const sent = ds.reduce((a, d) => a + D.days[d].sent, 0), failed = ds.reduce((a, d) => a + D.days[d].failed, 0);
     const texted = U('texted'), rep = U('replied'), yes = U('yes'), conn = U('conn');
-    const called = new Set([...U('called')].filter((i) => yes.has(i)));   // YES leads with a call (same as the Slack update)
+    // Called = YES leads in this range with an outbound call at or after their first YES in the range, on any day up to now
+    const fy = new Map(); D.yesFirst.forEach(([t, i]) => { const d = dayOf(t); if (d >= f && d <= e && !fy.has(i)) fy.set(i, t); });
+    const called = new Set([...yes].filter((i) => fy.has(i) && (outT.get(i) || []).some((x) => x >= fy.get(i))));
     const O = D.orders.filter((o) => o[0] >= f && o[0] <= e);
     const k = { club: 0, pg1: 0, bfcm: 0, trial: 0 };
     O.forEach((o) => o[2].forEach((it) => { if (it[1] in k) k[it[1]]++; }));
@@ -624,7 +626,7 @@
     });
     const out = C.filter((c) => c[6]);
     const calledP = new Set(out.map((c) => c[1])), connP = new Set(C.filter((c) => c[3] >= 90).map((c) => c[1]));
-    const calledYes = Y.filter(([, i]) => (outT.get(i) || []).some(inR)).length;
+    const calledYes = Y.filter(([t, i]) => (outT.get(i) || []).some((x) => x >= t)).length;   // called after the YES, any day
     const O = D.orders.filter((o) => o[0] >= f && o[0] <= e && okRep(o[5]));
     const cats = new Map();
     C.forEach((c) => {
