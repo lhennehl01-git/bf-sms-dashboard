@@ -257,7 +257,7 @@
         <button type="button" data-g="day" aria-pressed="true">Daily</button><button type="button" data-g="week" aria-pressed="false">Weekly</button><button type="button" data-g="month" aria-pressed="false">Monthly</button>
       </div>
     </div>
-    <p>Whole campaign since Nov 18 (not affected by the date range). Weeks start on Sunday.</p>
+    <p>Whole campaign since Nov 18 (not affected by the date range). Weeks start on Monday.</p>
     <div class="two">
       <div class="card"><p class="k">Texts sent</p><div class="chart" id="tr-sent"></div></div>
       <div class="card"><p class="k">YES replies (texts)</p><div class="chart" id="tr-yes"></div></div>
@@ -329,7 +329,7 @@
           <select id="cc-rep" aria-label="Setter"><option value="all">All setters</option></select>
         </div>
       </div>
-      <p style="margin:6px 0 10px">Whole campaign, stacked by outcome. Count = connected calls; % = each outcome's share of that period. Weeks start on Sunday.</p>
+      <p style="margin:6px 0 10px">Whole campaign, stacked by outcome. Count = connected calls; % = each outcome's share of that period. Weeks start on Monday.</p>
       <div class="card"><div class="legend" id="cc-leg"></div><div class="chart" id="cc-trend"></div></div>
     </section>
 
@@ -375,7 +375,7 @@
         <tr><td>Converted</td><td>Orders in the call tracker with Call Type "SMS blast", one per rep and customer per day.</td></tr>
         <tr><td>What sold</td><td>BFCM bundles counted on their own. Products with "Trial" in the name are trials, not paid PG1.</td></tr>
         <tr><td>By group</td><td>Past buyers = the main blast list. Failed Close = the HubSpot Failed Close (Oct–Nov) list plus 15 past buyers from it.</td></tr>
-        <tr><td>Dates</td><td>Eastern time. Weeks start on Sunday.</td></tr>
+        <tr><td>Dates</td><td>Eastern time. Weeks start on Monday.</td></tr>
         <tr><td>Response time</td><td>First YES text → first outbound call on the Black Friday line after it. "Not called yet" = no call so far.</td></tr>
         <tr><td>Connected-call outcomes</td><td>Only calls whose disposition has Connects = 1 in the Call Disposition sheet, grouped by its Disposition Category. Click an outcome for its dispositions and setters. The trend covers the whole campaign; % = each outcome's share of that period.</td></tr>
         <tr><td>Calls trend</td><td>Bars = outbound calls. Connect % = people connected 90 sec+ ÷ people called. Conversion % = orders ÷ people connected.</td></tr>
@@ -427,7 +427,7 @@
     const lmEnd = addDays(mStart, -1), lmStart = lmEnd.slice(0, 8) + '01';
     switch (v) {
       case 'yesterday': return [addDays(t, -1), addDays(t, -1)];
-      case 'this_week': return [addDays(t, -dow), t];
+      case 'this_week': return [addDays(t, -((dow + 6) % 7)), t];   // weeks start Monday
       case 'last_7': return [addDays(t, -6), t];
       case 'last_14': return [addDays(t, -13), t];
       case 'last_30': return [addDays(t, -29), t];
@@ -517,7 +517,7 @@
     el.appendChild(svg);
   }
 
-  function weekStart(d) { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - t.getUTCDay()); return t.toISOString().slice(0, 10); }
+  function weekStart(d) { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7));   /* Monday start */ return t.toISOString().slice(0, 10); }
   function trend() {
     const m = new Map();
     DAYS.forEach((d) => {
