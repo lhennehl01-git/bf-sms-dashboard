@@ -421,6 +421,8 @@
   const FIRST = '2026-11-18';
   const sel = $('range'), fromEl = $('from'), toEl = $('to');
   fromEl.max = TODAY; toEl.max = TODAY;
+  // Default view: Yesterday before 9 AM Eastern (today has little data yet), Today from 9 AM on.
+  if (+new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hourCycle: 'h23' }).format(new Date()) < 9) sel.value = 'yesterday';
   function range() {
     const v = sel.value, t = TODAY, dow = new Date(t + 'T00:00:00Z').getUTCDay();
     const mStart = t.slice(0, 8) + '01';
