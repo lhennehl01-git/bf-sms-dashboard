@@ -106,6 +106,16 @@
   #o-rep-t td:nth-child(-n+2), #o-team-t td:first-child { white-space: nowrap; }
   .stick { position: sticky; top: 0; z-index: 30; background: var(--bg); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
     margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))); padding: 0 max(16px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--line); transition: box-shadow .15s; }
+  /* Frozen top: title, update times, date range, tabs and filters stay on screen while scrolling */
+  .topfix { position: sticky; top: 0; z-index: 30; background: var(--bg); display: grid; gap: 14px;
+    margin: -28px calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 0; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 0; transition: box-shadow .15s; }
+  .topfix .stick { position: static; margin: 0; padding: 0; }
+  .topfix.stuck { box-shadow: 0 6px 16px -10px rgba(0,0,0,.25); }
+  /* Small or short screens: only the tabs row stays frozen, so the header doesn't take over the screen */
+  @media (max-width: 640px), (max-height: 600px) {
+    .topfix { position: static; box-shadow: none; display: contents; }
+    .topfix .stick { position: sticky; top: 0; margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))); padding: 0 max(16px, env(safe-area-inset-right, 0px)); }
+  }
   .stick.stuck { box-shadow: 0 6px 16px -10px rgba(0,0,0,.25); }
   .stick .tabs { border-bottom: 0; }
   .stick-r { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 0; }
@@ -166,6 +176,7 @@
 <body>
 <div class="bar"></div>
 <div class="wrap">
+  <div class="topfix" id="topfix">
   <header class="hdr">
     <div class="hdr-l">
       <p class="eyebrow">Performance Golf · Phone Team</p>
@@ -209,6 +220,7 @@
       </div>
       <span class="srange" id="s-range"></span>
     </div>
+  </div>
   </div>
   <p class="fnote" id="f-label" hidden></p>
 
@@ -993,7 +1005,7 @@
     render();
   });
   [fromEl, toEl].forEach((el) => el.addEventListener('change', () => { if (el.validity.valid) render(); }));
-  const stick = $('stick'); const onScroll = () => stick.classList.toggle('stuck', stick.getBoundingClientRect().top <= 0 && scrollY > 0);
+  const stick = $('stick'), topfix = $('topfix'); const onScroll = () => { const frozen = getComputedStyle(topfix).position === 'sticky'; topfix.classList.toggle('stuck', frozen && scrollY > 0); stick.classList.toggle('stuck', !frozen && stick.getBoundingClientRect().top <= 0 && scrollY > 0); };
   window.addEventListener('scroll', onScroll, { passive: true });
   let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
