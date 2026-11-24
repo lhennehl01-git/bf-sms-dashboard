@@ -209,6 +209,36 @@ for r in sms:
         k = (i, r['Started At'][:10])   # first YES per person per day, so a repeat YES on a new day counts that day too
         if t is not None and (k not in yes_first or t < yes_first[k]): yes_first[k] = t
 yes_rows = sorted([[t, i] for (i, _), t in yes_first.items()])
+# Template performance: every automated (sequence) text, its copy with the first name put back as [FirstName].
+# A reply counts for the last template the person got before it.
+def tkey(r):
+    b = re.sub(r'\s+', ' ', (r.get('Body') or '').strip())
+    fn = (r.get('Contact First Name') or '').strip()
+    if len(fn) > 1: b = re.sub(r'(?i)\b' + re.escape(fn) + r'\b', '[FirstName]', b, count=1)
+    b = re.sub(r'^(Hi|Hey|Hello)\s+[^,]{0,30},', r'\1 [FirstName],', b)   # greeting name that didn't match the contact field
+    return ((r.get('Sequence Name') or '').strip(), b)
+tsends = collections.defaultdict(list)   # pid -> [[tmin, key]]
+tin = collections.defaultdict(list)      # pid -> [[tmin, isYes]]
+tcount = collections.Counter()
+for r in sms:
+    p, t = p10(r['Contact Number']), tmin(r['Started At'])
+    if not p or t is None: continue
+    if r['Direction'] == 'outbound' and (r.get('Sequence Name') or '').strip() and r['Disposition Status'] not in ('failed', 'invalid'):
+        k = tkey(r); tcount[k] += 1; tsends[pid(p)].append([t, k])
+    elif r['Direction'] == 'inbound':
+        tin[pid(p)].append([t, 1 if YES in (r.get('Tags') or '') else 0])
+tpls, tpl_ix = [], {}
+tpl_rows = []
+for i, ss in tsends.items():
+    ss.sort(key=lambda x: x[0]); rs = sorted(tin.get(i, []))
+    for j, (t, k) in enumerate(ss):
+        nxt = ss[j + 1][0] if j + 1 < len(ss) else 10 ** 9
+        got = [y for (u, y) in rs if t <= u < nxt]
+        key = k if tcount[k] >= 50 else (k[0], '(other copy)')
+        if key not in tpl_ix: tpl_ix[key] = len(tpls); tpls.append(list(key))
+        tpl_rows.append([t, i, tpl_ix[key], 1 if got else 0, 1 if any(got) else 0])
+tpl_rows.sort()
+print('templates', len(tpls), 'sends', len(tpl_rows))
 yes_ids = {i for (i, _) in yes_first}
 yes_calls = collections.defaultdict(list)   # YES lead -> outbound call times on ANY line (minutes), used for "Called"
 for st, num in any_out:
@@ -265,7 +295,7 @@ asof = max([r['Started At'] for r in sms] + [''])
 sales_asof = json.load(open(SALES_META))['pulled_at'] if os.path.exists(SALES_META) else ''
 core = {'updated': {'sms': asof, 'calls': call_asof}, 'days': days, 'orders': order_rows, 'pg': pg,
         'groups': G['groups'], 'gsize': [G['size'].get(g, 0) for g in G['groups']],
-        'calls': call_rows, 'yesFirst': yes_rows, 'yesCalls': yes_calls, 'reps': reps, 'repMeta': rep_meta, 'cats': cats, 'disps': disps, 'start': START}
+        'calls': call_rows, 'tpls': tpls, 'tplRows': tpl_rows, 'yesFirst': yes_rows, 'yesCalls': yes_calls, 'reps': reps, 'repMeta': rep_meta, 'cats': cats, 'disps': disps, 'start': START}
 data = dict(core, asof=asof, built=now_et().strftime('%Y-%m-%d %H:%M'))
 data['updated'] = dict(core['updated'], sales=sales_asof)
 built_at = now_et().strftime('%Y-%m-%d %H:%M:%S')   # sheets are read fresh on every build

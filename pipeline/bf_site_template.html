@@ -202,7 +202,7 @@
         <option value="custom">Custom…</option>
       </select>
       <div class="custom" id="custom" hidden>
-        <input type="date" id="from" min="2026-11-18" aria-label="From"><span>to</span><input type="date" id="to" min="2026-11-18" aria-label="To">
+        <input type="date" id="from" aria-label="From"><span>to</span><input type="date" id="to" aria-label="To">
       </div>
       <p class="rlabel" id="rlabel">—</p>
     </div>
@@ -253,6 +253,15 @@
     <div class="card tw"><table>
       <thead><tr><th>Group</th><th class="n">Uploaded</th><th class="n">Texted</th><th class="n">Replied</th><th class="n">YES</th><th class="n">Connected</th><th class="n">Sales</th><th class="n">Upfront</th></tr></thead>
       <tbody id="groups"></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>By template</h2>
+    <p>Each automated text we sent in this range. A reply counts for the last text the person got before it.</p>
+    <div class="card tw"><table>
+      <thead><tr><th>Sequence</th><th>Text</th><th class="n">Texted</th><th class="n">Replied</th><th class="n">Reply %</th><th class="n">YES</th><th class="n">YES %</th></tr></thead>
+      <tbody id="tpls"></tbody>
     </table></div>
   </section>
 
@@ -386,7 +395,8 @@
         <tr><td>Connected</td><td>People with at least one call of 90 seconds or more on the Black Friday line.</td></tr>
         <tr><td>Converted</td><td>Orders in the call tracker with Call Type "SMS blast", one per rep and customer per day.</td></tr>
         <tr><td>What sold</td><td>BFCM bundles counted on their own. Products with "Trial" in the name are trials, not paid PG1.</td></tr>
-        <tr><td>By group</td><td>Past buyers = the main blast list. Failed Close = the HubSpot Failed Close (Oct–Nov) list plus 15 past buyers from it.</td></tr>
+        <tr><td>By group</td><td>Past buyers are split by the year of their order (2026, 2025, 2024). Paid Ads leads = the Paid Ads WB1102 list. Failed Close = the HubSpot Failed Close (Oct–Nov) list plus 15 past buyers from it.</td></tr>
+        <tr><td>By template</td><td>Automated texts from sequences, grouped by their exact copy ([FirstName] stands for the name). Texted = people sent that copy in the range; a reply or YES counts for the last copy the person got before replying. Copies sent fewer than 50 times are grouped as "(other copy)".</td></tr>
         <tr><td>Dates</td><td>Eastern time. Weeks start on Monday.</td></tr>
         <tr><td>Response time</td><td>First YES text → first outbound call on the Black Friday line after it. "Not called yet" = no call so far.</td></tr>
         <tr><td>Connected-call outcomes</td><td>Only calls whose disposition has Connects = 1 in the Call Disposition sheet, grouped by its Disposition Category. Click an outcome for its dispositions and setters. The trend covers the whole campaign; % = each outcome's share of that period.</td></tr>
@@ -477,6 +487,13 @@
     const inG = (set, g) => { let n = 0; set.forEach((i) => { if (D.pg[i] === g) n++; }); return n; };
     m.groups = D.groups.map((g, gi) => { const go = O.filter((o) => o[4] === gi);
       return [g, D.gsize[gi], inG(texted, gi), inG(rep, gi), inG(yes, gi), inG(conn, gi), go.length, go.reduce((a, o) => a + o[3], 0)]; });
+    // templates: sends whose time falls in the range
+    const tp = new Map(), d0 = dayStart(f), d1 = dayStart(addDays(e, 1));
+    (D.tplRows || []).forEach(([t, i, k, r, y]) => { if (t < d0 || t >= d1) return;
+      let x = tp.get(k); if (!x) { x = [new Set(), new Set(), new Set()]; tp.set(k, x); }
+      x[0].add(i); if (r) x[1].add(i); if (y) x[2].add(i); });
+    m.tpls = [...tp.entries()].map(([k, x]) => [D.tpls[k][0], D.tpls[k][1], x[0].size, x[1].size, rate(x[1].size, x[0].size), x[2].size, rate(x[2].size, x[0].size)])
+      .sort((a, b) => b[2] - a[2]);
     return m;
   }
 
@@ -547,6 +564,7 @@
   // ---------- Call Performance (response time, status and gauge follow the TMA report rules)
   const HOOP = [8, 17], SLA = 30, RT_TARGET = 5;
   const dayOf = (t) => addDays(D.start, Math.floor(t / 1440));
+  const dayStart = (d) => Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(D.start + 'T00:00:00Z')) / 60000);   // minutes from campaign start
   const inHoop = (t) => { const h = Math.floor((t % 1440) / 60); return h >= HOOP[0] && h < HOOP[1]; };
   const outT = new Map(), incT = new Map(), callRep = new Map();   // person -> outbound call times / inbound completed times
   D.calls.forEach((c) => {
@@ -979,6 +997,7 @@
     setText('t-conn', int(m.connected)); setText('t-cr', pct(m.connect_rate)); setText('t-conv', int(m.converted)); setText('t-cy', pct(m.conv_yes)); setText('t-cc', pct(m.conv_conn));
     setText('s-rev', money(m.revenue)); setText('s-club', int(m.clubs)); setText('s-pg1', int(m.pg1)); setText('s-bfcm', int(m.bfcm)); setText('s-trial', int(m.trials));
     rows($('groups'), m.groups, [null, int, int, int, int, int, int, money], 'No groups yet.');
+    rows($('tpls'), m.tpls, [null, null, int, int, pct, int, pct], 'No automated texts in this date range.');
     rows($('reps'), m.reps, [null, int, money], 'No sales in this date range.');
     funnel($('funnel'), m);
     setText('hours-h', 'By hour · ' + rl);

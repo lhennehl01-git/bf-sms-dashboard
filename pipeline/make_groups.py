@@ -10,17 +10,28 @@ def make():
     files = sorted(glob.glob(os.path.join(BF_ROOT, 'Cohorts', 'BF_cohort_*.csv')))
     if not files:
         raise SystemExit('no cohort files found')
-    names = ['Past buyers (main blast)', 'Failed Close (Oct-Nov)']
+    names = ['Past buyers 2026', 'Past buyers 2025', 'Past buyers 2024', 'Past buyers 2023 and older',
+             'Paid Ads leads', 'Failed Close (Oct-Nov)']
     size = {n: 0 for n in names}
+
+    def group(f, r):   # Failed Close list, then Paid Ads leads, then past buyers by order year
+        if 'FailedClose' in os.path.basename(f): return 5
+        if (r.get('Lead Source') or '').startswith('Paid Ads'): return 4
+        y = (r.get('Order Year') or '').strip()
+        return {'2026': 0, '2025': 1, '2024': 2}.get(y, 3)
     phones, emails = {}, {}
     for f in files:
-        gi = 1 if 'FailedClose' in os.path.basename(f) else 0
         for r in csv.DictReader(open(f, encoding='utf-8-sig')):
+            gi = group(f, r)
             size[names[gi]] += 1
             if r.get('Clean Phone'):
                 phones[scramble(r['Clean Phone'])] = gi
             if r.get('Email'):
                 emails[scramble(r['Email'])] = gi
+    keep = [n for n in names if size[n]]   # drop empty groups, renumber
+    ren = {names.index(n): i for i, n in enumerate(keep)}
+    phones = {k: ren[v] for k, v in phones.items()}; emails = {k: ren[v] for k, v in emails.items()}
+    size = {n: size[n] for n in keep}; names = keep
     out = {'groups': names, 'size': size, 'files': [os.path.basename(f) for f in files],
            'phones': dict(sorted(phones.items())), 'emails': dict(sorted(emails.items()))}
     new = json.dumps(out, separators=(',', ':'), sort_keys=True)
