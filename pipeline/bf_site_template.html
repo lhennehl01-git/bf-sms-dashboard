@@ -267,9 +267,9 @@
 
   <section>
     <h2>By template</h2>
-    <p>Each automated text we sent in this range. A reply counts for the last text the person got before it.</p>
+    <p>Each template we texted in this range, named from the text that went out. A reply counts for the last template the person got before it.</p>
     <div class="card tw"><table>
-      <thead><tr><th>Sequence</th><th>Text</th><th class="n">Texted</th><th class="n">Replied</th><th class="n">Reply %</th><th class="n">YES</th><th class="n">YES %</th></tr></thead>
+      <thead><tr><th>Template</th><th>Text</th><th class="n">Texted</th><th class="n">Replied</th><th class="n">Reply %</th><th class="n">YES</th><th class="n">YES %</th></tr></thead>
       <tbody id="tpls"></tbody>
     </table></div>
   </section>
@@ -406,7 +406,7 @@
         <tr><td>What sold</td><td>BFCM bundles counted on their own. Products with "Trial" in the name are trials, not paid PG1.</td></tr>
         <tr><td>By group</td><td>Past buyers are split by the year of their order (2026, 2025, 2024). Paid Ads leads = the Paid Ads WB1102 list. Failed Close = the HubSpot Failed Close (Oct–Nov) list plus 15 past buyers from it.</td></tr>
         <tr><td>What people replied</td><td>Each person who texted back on the Black Friday line in the range, counted once, by the tag Aloware put on their reply (the BF line's YES / NO / DNC tags). Someone with more than one tag counts once, in this order: DNC, then NO, then YES (same as the TMA dashboard). Other = replied with none of those tags. % = share of people who replied. YES here can be a little lower than the YES card, which counts everyone who said YES at any point.</td></tr>
-        <tr><td>By template</td><td>Automated texts from sequences, grouped by their exact copy ([FirstName] stands for the name). Texted = people sent that copy in the range; a reply or YES counts for the last copy the person got before replying. Copies sent fewer than 50 times are grouped as "(other copy)".</td></tr>
+        <tr><td>By template</td><td>The template is named from the text that was sent (a phrase only that template has), whatever sequence sent it: "you made our private Black Friday list" = Black Friday Initial SMS; "still holding your private Black Friday pricing" = Black Friday Second Text to No Reply. Other automated texts are listed by their copy ([FirstName] stands for the name); ones sent fewer than 50 times are grouped. Reps' own texts are not counted. Texted = people sent that template in the range; a reply or YES counts for the last template the person got before replying.</td></tr>
         <tr><td>Dates</td><td>Eastern time. Weeks start on Monday.</td></tr>
         <tr><td>Response time</td><td>First YES text → first outbound call on the Black Friday line after it. "Not called yet" = no call so far.</td></tr>
         <tr><td>Connected-call outcomes</td><td>Only calls whose disposition has Connects = 1 in the Call Disposition sheet, grouped by its Disposition Category. Click an outcome for its dispositions and setters. The trend covers the whole campaign; % = each outcome's share of that period.</td></tr>

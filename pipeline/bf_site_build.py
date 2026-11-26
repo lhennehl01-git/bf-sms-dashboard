@@ -209,22 +209,34 @@ for r in sms:
         k = (i, r['Started At'][:10])   # first YES per person per day, so a repeat YES on a new day counts that day too
         if t is not None and (k not in yes_first or t < yes_first[k]): yes_first[k] = t
 yes_rows = sorted([[t, i] for (i, _), t in yes_first.items()])
-# Template performance: every automated (sequence) text, its copy with the first name put back as [FirstName].
-# A reply counts for the last template the person got before it.
+# Template performance: the template is named from the TEXT that went out (a phrase only that template has, like the
+# TMA dashboard's template signatures), not from the sequence. A reply counts for the last template the person got before it.
+TEMPLATES = [   # (name, signature phrase in the text, copy shown on the page)
+    ('Black Friday Initial SMS', 'you made our private black friday list',
+     "Hi [FirstName], you made our private Black Friday list. Performance Golf Club pricing that's not public, only for a select few. Want it? Reply YES"),
+    ('Black Friday Second Text to No Reply', 'still holding your private black friday pricing',
+     "Hi [FirstName], we're still holding your private Black Friday pricing on Performance Golf clubs through the end of this week. Interested? Reply YES."),
+]
+def norm(s): return re.sub(r'\s+', ' ', (s or '').lower().replace('’', "'").replace('‘', "'")).strip()
 def tkey(r):
+    b = norm(r.get('Body'))
+    for name, sig, copy in TEMPLATES:
+        if sig in b: return (name, copy)
+    if not (r.get('Sequence Name') or '').strip(): return None   # a rep's own text, not a template
     b = re.sub(r'\s+', ' ', (r.get('Body') or '').strip())
     fn = (r.get('Contact First Name') or '').strip()
     if len(fn) > 1: b = re.sub(r'(?i)\b' + re.escape(fn) + r'\b', '[FirstName]', b, count=1)
-    b = re.sub(r'^(Hi|Hey|Hello)\s+[^,]{0,30},', r'\1 [FirstName],', b)   # greeting name that didn't match the contact field
-    return ((r.get('Sequence Name') or '').strip(), b)
+    b = re.sub(r'^(Hi|Hey|Hello)\s+[^,]{0,30},', r'\1 [FirstName],', b)
+    return ('Other automated text', b)
 tsends = collections.defaultdict(list)   # pid -> [[tmin, key]]
 tin = collections.defaultdict(list)      # pid -> [[tmin, isYes]]
 tcount = collections.Counter()
 for r in sms:
     p, t = p10(r['Contact Number']), tmin(r['Started At'])
     if not p or t is None: continue
-    if r['Direction'] == 'outbound' and (r.get('Sequence Name') or '').strip() and r['Disposition Status'] not in ('failed', 'invalid'):
-        k = tkey(r); tcount[k] += 1; tsends[pid(p)].append([t, k])
+    if r['Direction'] == 'outbound' and r['Disposition Status'] not in ('failed', 'invalid'):
+        k = tkey(r)
+        if k: tcount[k] += 1; tsends[pid(p)].append([t, k])
     elif r['Direction'] == 'inbound':
         tin[pid(p)].append([t, 1 if YES in (r.get('Tags') or '') else 0])
 tpls, tpl_ix = [], {}
@@ -234,7 +246,7 @@ for i, ss in tsends.items():
     for j, (t, k) in enumerate(ss):
         nxt = ss[j + 1][0] if j + 1 < len(ss) else 10 ** 9
         got = [y for (u, y) in rs if t <= u < nxt]
-        key = k if tcount[k] >= 50 else (k[0], '(other copy)')
+        key = k if (k[0] != 'Other automated text' or tcount[k] >= 50) else (k[0], '(various copies, each sent fewer than 50 times)')
         if key not in tpl_ix: tpl_ix[key] = len(tpls); tpls.append(list(key))
         tpl_rows.append([t, i, tpl_ix[key], 1 if got else 0, 1 if any(got) else 0])
 tpl_rows.sort()
