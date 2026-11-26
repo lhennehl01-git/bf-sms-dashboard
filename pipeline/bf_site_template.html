@@ -257,6 +257,15 @@
   </section>
 
   <section>
+    <h2>What people replied</h2>
+    <p>Everyone who replied in this range, once each. Someone with more than one reply tag counts once, in this order: DNC, NO, YES. The % is of people who replied.</p>
+    <div class="card tw"><table>
+      <thead><tr><th>Group</th><th class="n">Replied</th><th class="n">YES</th><th class="n">YES %</th><th class="n">NO</th><th class="n">NO %</th><th class="n">DNC</th><th class="n">DNC %</th><th class="n">Other</th><th class="n">Other %</th></tr></thead>
+      <tbody id="mix"></tbody>
+    </table></div>
+  </section>
+
+  <section>
     <h2>By template</h2>
     <p>Each automated text we sent in this range. A reply counts for the last text the person got before it.</p>
     <div class="card tw"><table>
@@ -396,6 +405,7 @@
         <tr><td>Converted</td><td>Orders in the call tracker with Call Type "SMS blast", one per rep and customer per day.</td></tr>
         <tr><td>What sold</td><td>BFCM bundles counted on their own. Products with "Trial" in the name are trials, not paid PG1.</td></tr>
         <tr><td>By group</td><td>Past buyers are split by the year of their order (2026, 2025, 2024). Paid Ads leads = the Paid Ads WB1102 list. Failed Close = the HubSpot Failed Close (Oct–Nov) list plus 15 past buyers from it.</td></tr>
+        <tr><td>What people replied</td><td>Each person who texted back on the Black Friday line in the range, counted once, by the tag Aloware put on their reply (the BF line's YES / NO / DNC tags). Someone with more than one tag counts once, in this order: DNC, then NO, then YES (same as the TMA dashboard). Other = replied with none of those tags. % = share of people who replied. YES here can be a little lower than the YES card, which counts everyone who said YES at any point.</td></tr>
         <tr><td>By template</td><td>Automated texts from sequences, grouped by their exact copy ([FirstName] stands for the name). Texted = people sent that copy in the range; a reply or YES counts for the last copy the person got before replying. Copies sent fewer than 50 times are grouped as "(other copy)".</td></tr>
         <tr><td>Dates</td><td>Eastern time. Weeks start on Monday.</td></tr>
         <tr><td>Response time</td><td>First YES text → first outbound call on the Black Friday line after it. "Not called yet" = no call so far.</td></tr>
@@ -487,6 +497,13 @@
     const inG = (set, g) => { let n = 0; set.forEach((i) => { if (D.pg[i] === g) n++; }); return n; };
     m.groups = D.groups.map((g, gi) => { const go = O.filter((o) => o[4] === gi);
       return [g, D.gsize[gi], inG(texted, gi), inG(rep, gi), inG(yes, gi), inG(conn, gi), go.length, go.reduce((a, o) => a + o[3], 0)]; });
+    // reply mix: each replier once, DNC > NO > YES > Other (same order as the TMA dashboard)
+    const no = U('no'), dnc = U('dnc');
+    const cls = (i) => (dnc.has(i) ? 2 : no.has(i) ? 1 : yes.has(i) ? 0 : 3);
+    const mixRow = (name, keep) => { const c = [0, 0, 0, 0]; let n = 0;
+      rep.forEach((i) => { if (keep(i)) { n++; c[cls(i)]++; } });
+      return [name, n, c[0], rate(c[0], n), c[1], rate(c[1], n), c[2], rate(c[2], n), c[3], rate(c[3], n)]; };
+    m.mix = [mixRow('All groups', () => true), ...D.groups.map((g, gi) => mixRow(g, (i) => D.pg[i] === gi)).filter((r) => r[1])];
     // templates: sends whose time falls in the range
     const tp = new Map(), d0 = dayStart(f), d1 = dayStart(addDays(e, 1));
     (D.tplRows || []).forEach(([t, i, k, r, y]) => { if (t < d0 || t >= d1) return;
@@ -998,6 +1015,7 @@
     setText('s-rev', money(m.revenue)); setText('s-club', int(m.clubs)); setText('s-pg1', int(m.pg1)); setText('s-bfcm', int(m.bfcm)); setText('s-trial', int(m.trials));
     rows($('groups'), m.groups, [null, int, int, int, int, int, int, money], 'No groups yet.');
     rows($('tpls'), m.tpls, [null, null, int, int, pct, int, pct], 'No automated texts in this date range.');
+    rows($('mix'), m.mix[0][1] ? m.mix : [], [null, int, int, pct, int, pct, int, pct, int, pct], 'No replies in this date range.');
     rows($('reps'), m.reps, [null, int, money], 'No sales in this date range.');
     funnel($('funnel'), m);
     setText('hours-h', 'By hour · ' + rl);
