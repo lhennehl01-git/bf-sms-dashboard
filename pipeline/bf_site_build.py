@@ -238,17 +238,20 @@ for r in sms:
         k = tkey(r)
         if k: tcount[k] += 1; tsends[pid(p)].append([t, k])
     elif r['Direction'] == 'inbound':
-        tin[pid(p)].append([t, 1 if YES in (r.get('Tags') or '') else 0])
+        tg = r.get('Tags') or ''
+        tin[pid(p)].append([t, 1 if YES in tg else 0, 2 if DNC in tg else 1 if NO in tg else 0 if YES in tg else 3])   # class 0 YES 1 NO 2 DNC 3 Other
 tpls, tpl_ix = [], {}
 tpl_rows = []
 for i, ss in tsends.items():
     ss.sort(key=lambda x: x[0]); rs = sorted(tin.get(i, []))
     for j, (t, k) in enumerate(ss):
         nxt = ss[j + 1][0] if j + 1 < len(ss) else 10 ** 9
-        got = [y for (u, y) in rs if t <= u < nxt]
+        got = [(y, c) for (u, y, c) in rs if t <= u < nxt]
         key = k if (k[0] != 'Other automated text' or tcount[k] >= 50) else (k[0], '(various copies, each sent fewer than 50 times)')
         if key not in tpl_ix: tpl_ix[key] = len(tpls); tpls.append(list(key))
-        tpl_rows.append([t, i, tpl_ix[key], 1 if got else 0, 1 if any(got) else 0])
+        # reply class for this send: DNC > NO > YES > Other across the replies it got; -1 = no reply
+        cls = min((c for _, c in got), key=lambda c: {2: 0, 1: 1, 0: 2, 3: 3}[c]) if got else -1
+        tpl_rows.append([t, i, tpl_ix[key], 1 if got else 0, 1 if any(y for y, _ in got) else 0, cls])
 tpl_rows.sort()
 print('templates', len(tpls), 'sends', len(tpl_rows))
 yes_ids = {i for (i, _) in yes_first}

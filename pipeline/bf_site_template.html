@@ -31,6 +31,10 @@
   .hdr { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px 24px; align-items: end; }
   .hdr-r { display: grid; gap: 6px; width: 100%; }
   .hdr-r select { width: 100%; min-width: 0; }
+  .rnav { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+  .rnav button { font: inherit; font-size: 16px; line-height: 1; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; width: 34px; height: 34px; cursor: pointer; }
+  .rnav button:hover:not(:disabled) { border-color: var(--muted); }
+  .rnav button:disabled { opacity: .35; cursor: default; }
   .hdr-r .k { margin: 0; }
   .custom { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
   .custom[hidden] { display: none; }
@@ -82,6 +86,16 @@
   .three { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; align-items: start; }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); margin: 0 0 8px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .rmix { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .rd h3 { margin: 0 0 4px; font-size: 14px; }
+  .rd .dsub { margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+  .rd .dwrap { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 14px; align-items: center; }
+  .rd svg { width: 140px; height: 140px; }
+  .rd svg .tot { font-size: 20px; font-weight: 700; fill: var(--fg); }
+  .rd ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .rd li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+  .rd li i { width: 10px; height: 10px; border-radius: 2px; }
+  .rd li b { font-weight: 600; } .rd li em { font-style: normal; color: var(--muted); min-width: 46px; text-align: right; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
   .legend i.ln { height: 3px; border-radius: 2px; width: 16px; }
   .donuts { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
@@ -189,6 +203,7 @@
     </div>
     <div class="hdr-r">
       <label class="k" for="range">Date range</label>
+      <div class="rnav"><button type="button" id="r-prev" aria-label="Previous period" title="Previous period">‹</button>
       <select id="range">
         <option value="today">Today</option>
         <option value="yesterday">Yesterday</option>
@@ -201,6 +216,7 @@
         <option value="all">Since launch (Nov 18)</option>
         <option value="custom">Custom…</option>
       </select>
+      <button type="button" id="r-next" aria-label="Next period" title="Next period">›</button></div>
       <div class="custom" id="custom" hidden>
         <input type="date" id="from" aria-label="From"><span>to</span><input type="date" id="to" aria-label="To">
       </div>
@@ -257,21 +273,18 @@
   </section>
 
   <section>
-    <h2>What people replied</h2>
-    <p>Everyone who replied in this range, once each. Someone with more than one reply tag counts once, in this order: DNC, NO, YES. The % is of people who replied.</p>
-    <div class="card tw"><table>
-      <thead><tr><th>Group</th><th class="n">Replied</th><th class="n">YES</th><th class="n">YES %</th><th class="n">NO</th><th class="n">NO %</th><th class="n">DNC</th><th class="n">DNC %</th><th class="n">Other</th><th class="n">Other %</th></tr></thead>
-      <tbody id="mix"></tbody>
-    </table></div>
-  </section>
-
-  <section>
     <h2>By template</h2>
     <p>Each template we texted in this range, named from the text that went out. A reply counts for the last template the person got before it.</p>
     <div class="card tw"><table>
       <thead><tr><th>Template</th><th>Text</th><th class="n">Texted</th><th class="n">Replied</th><th class="n">Reply %</th><th class="n">YES</th><th class="n">YES %</th></tr></thead>
       <tbody id="tpls"></tbody>
     </table></div>
+  </section>
+
+  <section>
+    <h2>What people replied</h2>
+    <p>People who replied, once each, by what they said. Each template counts the replies to it (the last template the person got before replying). Someone with more than one reply tag counts once, in this order: DNC, NO, YES.</p>
+    <div class="rmix" id="mix"></div>
   </section>
 
   <section>
@@ -405,7 +418,8 @@
         <tr><td>Converted</td><td>Orders in the call tracker with Call Type "SMS blast", one per rep and customer per day.</td></tr>
         <tr><td>What sold</td><td>BFCM bundles counted on their own. Products with "Trial" in the name are trials, not paid PG1.</td></tr>
         <tr><td>By group</td><td>Past buyers are split by the year of their order (2026, 2025, 2024). Paid Ads leads = the Paid Ads WB1102 list. Failed Close = the HubSpot Failed Close (Oct–Nov) list plus 15 past buyers from it.</td></tr>
-        <tr><td>What people replied</td><td>Each person who texted back on the Black Friday line in the range, counted once, by the tag Aloware put on their reply (the BF line's YES / NO / DNC tags). Someone with more than one tag counts once, in this order: DNC, then NO, then YES (same as the TMA dashboard). Other = replied with none of those tags. % = share of people who replied. YES here can be a little lower than the YES card, which counts everyone who said YES at any point.</td></tr>
+        <tr><td>What people replied</td><td>Each person who texted back on the Black Friday line in the range, counted once, by the tag Aloware put on their reply (the BF line's YES / NO / DNC tags). Someone with more than one tag counts once, in this order: DNC, then NO, then YES (same as the TMA dashboard). Other = replied with none of those tags. % = share of people who replied. "All replies" = everyone who replied in the range; each template's chart = replies to that template (a reply counts for the last template the person got before it, same as By template). YES here can be a little lower than the YES card, which counts everyone who said YES at any point.</td></tr>
+        <tr><td>‹ › arrows</td><td>Move the date range back or forward by its own length (a day, a week, 7 days…; a month range moves a calendar month). The moved range shows as Custom.</td></tr>
         <tr><td>By template</td><td>The template is named from the text that was sent (a phrase only that template has), whatever sequence sent it: "you made our private Black Friday list" = Black Friday Initial SMS; "still holding your private Black Friday pricing" = Black Friday Second Text to No Reply. Other automated texts are listed by their copy ([FirstName] stands for the name); ones sent fewer than 50 times are grouped. Reps' own texts are not counted. Texted = people sent that template in the range; a reply or YES counts for the last template the person got before replying.</td></tr>
         <tr><td>Dates</td><td>Eastern time. Weeks start on Monday.</td></tr>
         <tr><td>Response time</td><td>First YES text → first outbound call on the Black Friday line after it. "Not called yet" = no call so far.</td></tr>
@@ -500,15 +514,20 @@
     // reply mix: each replier once, DNC > NO > YES > Other (same order as the TMA dashboard)
     const no = U('no'), dnc = U('dnc');
     const cls = (i) => (dnc.has(i) ? 2 : no.has(i) ? 1 : yes.has(i) ? 0 : 3);
-    const mixRow = (name, keep) => { const c = [0, 0, 0, 0]; let n = 0;
-      rep.forEach((i) => { if (keep(i)) { n++; c[cls(i)]++; } });
-      return [name, n, c[0], rate(c[0], n), c[1], rate(c[1], n), c[2], rate(c[2], n), c[3], rate(c[3], n)]; };
-    m.mix = [mixRow('All groups', () => true), ...D.groups.map((g, gi) => mixRow(g, (i) => D.pg[i] === gi)).filter((r) => r[1])];
+    const all = [0, 0, 0, 0]; rep.forEach((i) => all[cls(i)]++);
+    m.mix = [['All replies', 'Everyone who replied on the Black Friday line', all]];
     // templates: sends whose time falls in the range
     const tp = new Map(), d0 = dayStart(f), d1 = dayStart(addDays(e, 1));
     (D.tplRows || []).forEach(([t, i, k, r, y]) => { if (t < d0 || t >= d1) return;
       let x = tp.get(k); if (!x) { x = [new Set(), new Set(), new Set()]; tp.set(k, x); }
       x[0].add(i); if (r) x[1].add(i); if (y) x[2].add(i); });
+    // reply mix per template: each person once per template, best class over their replies to it (DNC > NO > YES > Other)
+    const rank = [2, 1, 0, 3], tm = new Map();
+    (D.tplRows || []).forEach(([t, i, k, r, y, c]) => { if (t < d0 || t >= d1 || c === undefined || c < 0) return;
+      let x = tm.get(k); if (!x) { x = new Map(); tm.set(k, x); }
+      const p = x.get(i); if (p === undefined || rank[c] < rank[p]) x.set(i, c); });
+    [...tm.entries()].sort((a, b) => b[1].size - a[1].size).forEach(([k, x]) => { const c = [0, 0, 0, 0]; x.forEach((v) => c[v]++);
+      m.mix.push([D.tpls[k][0], D.tpls[k][0] === 'Other automated text' ? D.tpls[k][1] : 'Replies to this template', c]); });
     m.tpls = [...tp.entries()].map(([k, x]) => [D.tpls[k][0], D.tpls[k][1], x[0].size, x[1].size, rate(x[1].size, x[0].size), x[2].size, rate(x[2].size, x[0].size)])
       .sort((a, b) => b[2] - a[2]);
     return m;
@@ -519,6 +538,37 @@
     tb.replaceChildren();
     if (!list.length) { const tr = tb.insertRow(), td = tr.insertCell(); td.colSpan = fmts.length; td.className = 'empty'; td.textContent = empty; return; }
     list.forEach((r) => { const tr = tb.insertRow(); fmts.forEach((f, i) => { const td = tr.insertCell(); td.textContent = f ? f(r[i]) : r[i]; if (f) td.className = 'n'; }); });
+  }
+
+  // reply-mix donuts: [title, subtitle, [yes, no, dnc, other]]
+  function donuts(el, list) {
+    el.replaceChildren();
+    const L = [['YES', css('--good')], ['NO', css('--warn')], ['DNC', css('--bad')], ['Other', css('--stone')]], ns = 'http://www.w3.org/2000/svg';
+    const show = list.filter((r) => r[2].some((v) => v));
+    if (!show.length) { const p = document.createElement('div'); p.className = 'card empty'; p.textContent = 'No replies in this date range.'; el.appendChild(p); return; }
+    show.forEach(([title, sub, c]) => {
+      const tot = c.reduce((a, b) => a + b, 0), card = document.createElement('div'); card.className = 'card rd';
+      const h = document.createElement('h3'); h.textContent = title; const s = document.createElement('p'); s.className = 'dsub'; s.textContent = sub;
+      const wrap = document.createElement('div'); wrap.className = 'dwrap';
+      const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', '0 0 140 140'); svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', title + ': ' + L.map(([n], i) => n + ' ' + c[i]).join(', '));
+      const R = 54, C = 2 * Math.PI * R; let off = 0;
+      const ring = document.createElementNS(ns, 'circle'); ring.setAttribute('cx', 70); ring.setAttribute('cy', 70); ring.setAttribute('r', R);
+      ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', css('--grid')); ring.setAttribute('stroke-width', 22); svg.appendChild(ring);
+      c.forEach((v, i) => { if (!v) return; const len = (v / tot) * C, a = document.createElementNS(ns, 'circle');
+        a.setAttribute('cx', 70); a.setAttribute('cy', 70); a.setAttribute('r', R); a.setAttribute('fill', 'none'); a.setAttribute('stroke', L[i][1]);
+        a.setAttribute('stroke-width', 22); a.setAttribute('stroke-dasharray', Math.max(len - 1.5, 0.5) + ' ' + (C - Math.max(len - 1.5, 0.5)));
+        a.setAttribute('stroke-dashoffset', -off); a.setAttribute('transform', 'rotate(-90 70 70)');
+        const tt = document.createElementNS(ns, 'title'); tt.textContent = L[i][0] + ': ' + int(v) + ' (' + pct(Math.round(v / tot * 1000) / 10) + ')'; a.appendChild(tt);
+        svg.appendChild(a); off += len; });
+      const t1 = document.createElementNS(ns, 'text'); t1.setAttribute('x', 70); t1.setAttribute('y', 72); t1.setAttribute('text-anchor', 'middle'); t1.setAttribute('class', 'tot'); t1.textContent = int(tot);
+      const t2 = document.createElementNS(ns, 'text'); t2.setAttribute('x', 70); t2.setAttribute('y', 90); t2.setAttribute('text-anchor', 'middle'); t2.textContent = 'replied';
+      svg.append(t1, t2);
+      const ul = document.createElement('ul');
+      L.forEach(([n, col], i) => { const li = document.createElement('li'), sw = document.createElement('i'), nm = document.createElement('span'), b = document.createElement('b'), em = document.createElement('em');
+        sw.style.background = col; nm.textContent = n; b.textContent = int(c[i]); em.textContent = pct(tot ? Math.round(c[i] / tot * 1000) / 10 : 0); li.append(sw, nm, b, em); ul.appendChild(li); });
+      wrap.append(svg, ul); card.append(h, s, wrap); el.appendChild(card);
+    });
   }
 
   function bars(el, data, color, unit) {
@@ -861,7 +911,7 @@
       const fm2 = new Map(); r.cats.forEach((n, c) => { const f2 = fold(c); fm2.set(f2, (fm2.get(f2) || 0) + n); });
       const rank = (c) => (c === OTHER ? 99 : catRank.get(c));
       const cs = [...fm2.entries()].sort((a, b) => rank(a[0]) - rank(b[0])); cs.forEach(([c]) => used.add(c));
-      const card = document.createElement('div'); card.className = 'card donut';
+      const card = document.createElement('div'); card.className = 'card rd';
       const h = document.createElement('h3'); h.textContent = D.reps[k]; h.title = D.reps[k];
       const ul = document.createElement('ul');
       [...fm2.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).forEach(([c, n]) => {
@@ -1015,7 +1065,8 @@
     setText('s-rev', money(m.revenue)); setText('s-club', int(m.clubs)); setText('s-pg1', int(m.pg1)); setText('s-bfcm', int(m.bfcm)); setText('s-trial', int(m.trials));
     rows($('groups'), m.groups, [null, int, int, int, int, int, int, money], 'No groups yet.');
     rows($('tpls'), m.tpls, [null, null, int, int, pct, int, pct], 'No automated texts in this date range.');
-    rows($('mix'), m.mix[0][1] ? m.mix : [], [null, int, int, pct, int, pct, int, pct, int, pct], 'No replies in this date range.');
+    donuts($('mix'), m.mix);
+    const [pf, pe] = shiftRange(f, e, -1); $('r-prev').disabled = pe < FIRST; $('r-next').disabled = e >= TODAY;
     rows($('reps'), m.reps, [null, int, money], 'No sales in this date range.');
     funnel($('funnel'), m);
     setText('hours-h', 'By hour · ' + rl);
@@ -1042,6 +1093,24 @@
     render();
   });
   [fromEl, toEl].forEach((el) => el.addEventListener('change', () => { if (el.validity.valid) render(); }));
+  // ‹ › step the current range back / forward by its own length (a month range steps a calendar month); the result is shown as Custom
+  const mStartOf = (d) => d.slice(0, 8) + '01', mEndOf = (d) => addDays(mStartOf(addDays(mStartOf(d), 32)), -1);
+  function shiftRange(f, e, dir) {
+    if (sel.value === 'this_month' || sel.value === 'last_month' || (f.slice(8) === '01' && e === mEndOf(f))) {
+      const ms = dir < 0 ? mStartOf(addDays(f, -1)) : mStartOf(addDays(mStartOf(f), 32));
+      return [ms, mEndOf(ms)];
+    }
+    const monday = new Date(f + 'T00:00:00Z').getUTCDay() === 1;
+    if (monday && (sel.value === 'this_week' || e === addDays(f, 6))) return [addDays(f, dir * 7), addDays(f, dir * 7 + 6)];   // whole Mon–Sun weeks
+    const n = Math.round((new Date(e + 'T00:00:00Z') - new Date(f + 'T00:00:00Z')) / 864e5) + 1;
+    return [addDays(f, dir * n), addDays(e, dir * n)];
+  }
+  function step(dir) {
+    const [f, e] = range(); let [nf, ne] = shiftRange(f, e, dir);
+    if (ne > TODAY) ne = TODAY; if (nf > TODAY) return; if (ne < FIRST) return;
+    sel.value = 'custom'; fromEl.value = nf; toEl.value = ne; render();
+  }
+  $('r-prev').addEventListener('click', () => step(-1)); $('r-next').addEventListener('click', () => step(1));
   const stick = $('stick'), topfix = $('topfix'); const onScroll = () => { const frozen = getComputedStyle(topfix).position === 'sticky'; topfix.classList.toggle('stuck', frozen && scrollY > 0); stick.classList.toggle('stuck', !frozen && stick.getBoundingClientRect().top <= 0 && scrollY > 0); };
   window.addEventListener('scroll', onScroll, { passive: true });
   let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
